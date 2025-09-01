@@ -1,0 +1,210 @@
+import React from 'react';
+import { Target, RefreshCw, Wifi, WifiOff, Users, Moon, Sun, Globe, History, Download, HelpCircle } from 'lucide-react';
+
+interface HeaderProps {
+  status: string;
+  side: string;
+  isLoading: boolean;
+  isConnected: boolean;
+  playerCount: number;
+  matchDetected: boolean;
+  onRefresh: () => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
+  currentRegion?: string;
+  onViewMatchHistory?: () => void;
+  showMatchHistoryButton?: boolean;
+  onCheckUpdates?: () => void;
+  onViewFAQ?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ 
+  status, 
+  side, 
+  isLoading, 
+  isConnected,
+  playerCount,
+  matchDetected,
+  onRefresh,
+  isDarkMode,
+  onToggleDarkMode,
+  currentRegion,
+  onViewMatchHistory,
+  showMatchHistoryButton = false,
+  onCheckUpdates,
+  onViewFAQ
+}) => {
+  const getStatusIcon = () => {
+    if (status.includes('Agent Select')) {
+      return <Users className="w-6 h-6 text-blue-500" />;
+    } else if (status.includes('In Progress')) {
+      return <Target className="w-6 h-6 text-green-500" />;
+    }
+    return <Target className={`w-6 h-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />;
+  };
+
+  const getStatusColor = () => {
+    if (status.includes('Agent Select')) return 'text-blue-500';
+    if (status.includes('In Progress')) return 'text-green-500';
+    if (status.includes('Error')) return 'text-red-500';
+    return isDarkMode ? 'text-gray-400' : 'text-gray-700';
+  };
+
+  return (
+    <div className="text-center mb-8">
+      {/* Dark Mode Toggle */}
+      <div className="flex justify-end items-center space-x-3 mb-4">
+        {/* FAQ Button */}
+        {onViewFAQ && (
+          <button
+            onClick={onViewFAQ}
+            className={`
+              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
+              hover:scale-105 active:scale-95
+              ${isDarkMode 
+                ? 'bg-slate-800/40 border-slate-700/50 text-green-400 hover:bg-slate-800/60' 
+                : 'bg-white/20 border-white/30 text-green-700 hover:bg-white/30'
+              }
+            `}
+          >
+            <HelpCircle className="w-4 h-4" />
+            <span className="text-sm font-medium">FAQ</span>
+          </button>
+        )}
+        
+        {/* Check Updates Button */}
+        {onCheckUpdates && (
+          <button
+            onClick={onCheckUpdates}
+            className={`
+              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
+              hover:scale-105 active:scale-95
+              ${isDarkMode 
+                ? 'bg-slate-800/40 border-slate-700/50 text-purple-400 hover:bg-slate-800/60' 
+                : 'bg-white/20 border-white/30 text-purple-700 hover:bg-white/30'
+              }
+            `}
+          >
+            <Download className="w-4 h-4" />
+            <span className="text-sm font-medium">Updates</span>
+          </button>
+        )}
+        
+        {/* Match History Button */}
+        {showMatchHistoryButton && onViewMatchHistory && (
+          <button
+            onClick={onViewMatchHistory}
+            className={`
+              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
+              hover:scale-105 active:scale-95
+              ${isDarkMode 
+                ? 'bg-slate-800/40 border-slate-700/50 text-blue-400 hover:bg-slate-800/60' 
+                : 'bg-white/20 border-white/30 text-blue-700 hover:bg-white/30'
+              }
+            `}
+          >
+            <History className="w-4 h-4" />
+            <span className="text-sm font-medium">Match History</span>
+          </button>
+        )}
+        
+        <button
+          onClick={onToggleDarkMode}
+          className={`
+            p-3 rounded-full backdrop-blur-sm border transition-all duration-300
+            hover:scale-110 active:scale-95
+            ${isDarkMode 
+              ? 'bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:bg-slate-800/60' 
+              : 'bg-white/20 border-white/30 text-gray-700 hover:bg-white/30'
+            }
+          `}
+        >
+          {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Main Status */}
+      <div className="flex items-center justify-center space-x-3 mb-4">
+        {getStatusIcon()}
+        <h1 className={`text-3xl font-bold ${getStatusColor()}`}>
+          {status}
+        </h1>
+        {isLoading && (
+          <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
+        )}
+      </div>
+
+      {/* Side Info */}
+      {side && (
+        <div className={`text-lg font-medium mb-4 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          {side}
+        </div>
+      )}
+
+      {/* Connection Status */}
+      <div className="flex items-center justify-center space-x-6 text-sm mb-6">
+        <div className={`flex items-center space-x-2 ${
+          isConnected ? 'text-green-500' : 'text-red-500'
+        }`}>
+          {isConnected ? (
+            <Wifi className="w-4 h-4" />
+          ) : (
+            <WifiOff className="w-4 h-4" />
+          )}
+          <span>
+            {isConnected ? 'Ready' : 'Disconnected'}
+          </span>
+        </div>
+        
+        {currentRegion && isConnected && (
+          <div className={`flex items-center space-x-2 ${
+            isDarkMode ? 'text-blue-400' : 'text-blue-600'
+          }`}>
+            <Globe className="w-4 h-4" />
+            <span>Region: {currentRegion.toUpperCase()}</span>
+          </div>
+        )}
+        
+        {playerCount > 0 && (
+          <div className={`flex items-center space-x-2 ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>
+            <Users className="w-4 h-4" />
+            <span>{playerCount} players</span>
+          </div>
+        )}
+      </div>
+
+      {/* Manual Refresh Button */}
+      {matchDetected && (
+        <button
+          onClick={onRefresh}
+          disabled={isLoading}
+          className={`
+            px-6 py-3 rounded-xl font-medium transition-all duration-300
+            backdrop-blur-sm border hover:scale-105 active:scale-95
+            disabled:scale-100 disabled:cursor-not-allowed
+            ${isDarkMode 
+              ? 'bg-blue-600/20 border-blue-500/30 text-blue-400 hover:bg-blue-600/30 disabled:bg-blue-800/20' 
+              : 'bg-blue-500/20 border-blue-400/30 text-blue-700 hover:bg-blue-500/30 disabled:bg-blue-400/20'
+            }
+          `}
+        >
+          {isLoading ? (
+            <div className="flex items-center space-x-2">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              <span>Refreshing...</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <RefreshCw className="w-4 h-4" />
+              <span>Refresh Match</span>
+            </div>
+          )}
+        </button>
+      )}
+    </div>
+  );
+};
