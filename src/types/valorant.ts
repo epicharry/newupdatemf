@@ -23,6 +23,7 @@ export interface PlayerInfo {
   agentImageUrl?: string;
   rank: RankInfo;
   teamId: string;
+  isCurrentUser?: boolean;
 }
 
 export interface MatchData {

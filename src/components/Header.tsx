@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, RefreshCw, Wifi, WifiOff, Users, Moon, Sun, Globe, History, Download, HelpCircle } from 'lucide-react';
+import { Target, RefreshCw, Wifi, WifiOff, Users, Moon, Sun, Globe, History, Download, HelpCircle, MessageSquare } from 'lucide-react';
 
 interface HeaderProps {
   status: string;
@@ -16,6 +16,9 @@ interface HeaderProps {
   showMatchHistoryButton?: boolean;
   onCheckUpdates?: () => void;
   onViewFAQ?: () => void;
+  onViewSuggestions?: () => void;
+  onViewAnalysis?: () => void;
+  showAnalysisButton?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -32,7 +35,10 @@ export const Header: React.FC<HeaderProps> = ({
   onViewMatchHistory,
   showMatchHistoryButton = false,
   onCheckUpdates,
-  onViewFAQ
+  onViewFAQ,
+  onViewSuggestions,
+  onViewAnalysis,
+  showAnalysisButton = false
 }) => {
   const getStatusIcon = () => {
     if (status.includes('Agent Select')) {
@@ -69,6 +75,42 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <HelpCircle className="w-4 h-4" />
             <span className="text-sm font-medium">FAQ</span>
+          </button>
+        )}
+        
+        {/* Suggestions Button */}
+        {onViewSuggestions && (
+          <button
+            onClick={onViewSuggestions}
+            className={`
+              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
+              hover:scale-105 active:scale-95
+              ${isDarkMode 
+                ? 'bg-slate-800/40 border-slate-700/50 text-orange-400 hover:bg-slate-800/60' 
+                : 'bg-white/20 border-white/30 text-orange-700 hover:bg-white/30'
+              }
+            `}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="text-sm font-medium">Suggestions</span>
+          </button>
+        )}
+        
+        {/* Analysis Button */}
+        {showAnalysisButton && onViewAnalysis && (
+          <button
+            onClick={onViewAnalysis}
+            className={`
+              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
+              hover:scale-105 active:scale-95
+              ${isDarkMode 
+                ? 'bg-slate-800/40 border-slate-700/50 text-cyan-400 hover:bg-slate-800/60' 
+                : 'bg-white/20 border-white/30 text-cyan-700 hover:bg-white/30'
+              }
+            `}
+          >
+            <Target className="w-4 h-4" />
+            <span className="text-sm font-medium">Analysis</span>
           </button>
         )}
         

@@ -274,9 +274,8 @@ export class ValorantAPI {
   }
 
   private async handlePregameData(matchData: any): Promise<MatchData> {
-    // Fix: Use the correct team assignment
-    const myPlayer = matchData.AllyTeam?.Players?.find((p: any) => p.Subject === this.tokens?.puuid);
-    const myTeamId = myPlayer?.TeamID || 'Blue';
+    // Get team assignment from AllyTeam
+    const myTeamId = matchData.AllyTeam?.TeamID || 'Blue';
     
     // During agent select, only show ally team players since enemy team is not visible
     const allPlayers = matchData.AllyTeam?.Players || [];
@@ -295,12 +294,14 @@ export class ValorantAPI {
           agent: AGENTS[player.CharacterID] || (player.CharacterID ? 'Unknown' : 'Selecting...'),
           agentImageUrl: player.CharacterID ? `https://media.valorant-api.com/agents/${player.CharacterID}/displayicon.png` : undefined,
           rank,
-          teamId: myTeamId // Assign all players to your team during agent select
+          teamId: myTeamId, // Assign all players to your team during agent select
+          isCurrentUser: player.Subject === this.tokens?.puuid // Mark current user
         };
       })
     );
 
-    const side = myTeamId === 'Blue' ? 'Attacking' : 'Defending';
+    // Correct side detection: Red = Attacking, Blue = Defending
+    const side = myTeamId === 'Red' ? 'Attacking' : 'Defending';
     
     // Store the starting side for this match
     if (!this.startingSide) {
@@ -336,13 +337,14 @@ export class ValorantAPI {
           agent: AGENTS[player.CharacterID] || 'Unknown',
           agentImageUrl: player.CharacterID ? `https://media.valorant-api.com/agents/${player.CharacterID}/displayicon.png` : undefined,
           rank,
-          teamId: player.TeamID
+          teamId: player.TeamID,
+          isCurrentUser: player.Subject === this.tokens?.puuid // Mark current user
         };
       })
     );
 
-    // Determine current side (for internal use)
-    const currentSide = myTeamId === 'Blue' ? 'Attacking' : 'Defending';
+    // Correct side detection: Red = Attacking, Blue = Defending
+    const currentSide = myTeamId === 'Red' ? 'Attacking' : 'Defending';
     
     // Store the starting side if not already set
     if (!this.startingSide) {

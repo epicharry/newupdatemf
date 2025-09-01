@@ -20,6 +20,16 @@ export const TeamSection: React.FC<TeamSectionProps> = ({
   isDarkMode,
   onPlayerClick
 }) => {
+  // Sort players to put current user first if it's their team
+  const sortedPlayers = isMyTeam 
+    ? [...players].sort((a, b) => {
+        // Put current user first
+        if (a.isCurrentUser) return -1;
+        if (b.isCurrentUser) return 1;
+        return 0;
+      })
+    : players;
+
   return (
     <div className="flex-1">
       <div className={`
@@ -63,8 +73,8 @@ export const TeamSection: React.FC<TeamSectionProps> = ({
         
         {/* Players */}
         <div className="space-y-3">
-          {players.length > 0 ? (
-            players.map((player) => (
+          {sortedPlayers.length > 0 ? (
+            sortedPlayers.map((player) => (
               <PlayerCard
                 key={player.puuid}
                 player={player}

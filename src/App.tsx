@@ -3,6 +3,8 @@ import { Header } from './components/Header';
 import { MyTeamSection, EnemyTeamSection } from './components/TeamSection';
 import { MatchHistoryPage } from './components/MatchHistoryPage';
 import { FAQPage } from './components/FAQPage';
+import { SuggestionsPage } from './components/SuggestionsPage';
+import { AnalysisPage } from './components/AnalysisPage';
 import { MaintenanceScreen } from './components/MaintenanceScreen';
 import { BannedScreen } from './components/BannedScreen';
 import { Footer } from './components/Footer';
@@ -22,7 +24,7 @@ function App() {
   });
 
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerInfo | null>(null);
-  const [currentView, setCurrentView] = useState<'main' | 'match-history' | 'faq'>('main');
+  const [currentView, setCurrentView] = useState<'main' | 'match-history' | 'faq' | 'suggestions' | 'analysis'>('main');
   const [currentUser, setCurrentUser] = useState<PlayerInfo | null>(null);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState('');
@@ -196,6 +198,22 @@ function App() {
     setCurrentView('main');
   };
 
+  const handleViewSuggestions = () => {
+    setCurrentView('suggestions');
+  };
+
+  const handleBackFromSuggestions = () => {
+    setCurrentView('main');
+  };
+
+  const handleViewAnalysis = () => {
+    setCurrentView('analysis');
+  };
+
+  const handleBackFromAnalysis = () => {
+    setCurrentView('main');
+  };
+
   const handleCheckUpdates = () => {
     setShowUpdateModal(true);
   };
@@ -301,6 +319,32 @@ function App() {
     );
   }
 
+  // Show suggestions page
+  if (currentView === 'suggestions') {
+    return (
+      <SuggestionsPage
+        onBack={handleBackFromSuggestions}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+        currentUserPuuid={currentUser?.puuid}
+      />
+    );
+  }
+
+  // Show analysis page
+  if (currentView === 'analysis') {
+    return (
+      <AnalysisPage
+        currentTeammates={myTeamPlayers}
+        currentEnemies={enemyTeamPlayers}
+        currentUserPuuid={currentUser?.puuid || ''}
+        onBack={handleBackFromAnalysis}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+      />
+    );
+  }
+
   return (
     <div className={`min-h-screen transition-all duration-500 ${
       isDarkMode 
@@ -337,11 +381,16 @@ function App() {
           showMatchHistoryButton={isConnected && currentUser !== null}
           onCheckUpdates={handleCheckUpdates}
           onViewFAQ={handleViewFAQ}
+          onViewSuggestions={handleViewSuggestions}
+          onViewAnalysis={handleViewAnalysis}
+          showAnalysisButton={isConnected && matchDetected && (myTeamPlayers.length > 0 || enemyTeamPlayers.length > 0)}
         />
 
         {/* Teams Container */}
-        {(myTeamPlayers.length > 0 || enemyTeamPlayers.length > 0) && (
-          <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        {myTeamPlayers.length > 0 && (
+          <div className={`max-w-6xl mx-auto ${
+            enemyTeamPlayers.length > 0 ? 'grid lg:grid-cols-2 gap-8' : 'max-w-3xl'
+          }`}>
             <MyTeamSection
               title="Your Team"
               players={myTeamPlayers}
@@ -350,13 +399,16 @@ function App() {
               onPlayerClick={handlePlayerClick}
             />
             
-            <EnemyTeamSection
-              title="Enemy Team"
-              players={enemyTeamPlayers}
-              isMyTeam={false}
-              isDarkMode={isDarkMode}
-              onPlayerClick={handlePlayerClick}
-            />
+            {/* Only show enemy team if there are enemy players (live match) */}
+            {enemyTeamPlayers.length > 0 && (
+              <EnemyTeamSection
+                title="Enemy Team"
+                players={enemyTeamPlayers}
+                isMyTeam={false}
+                isDarkMode={isDarkMode}
+                onPlayerClick={handlePlayerClick}
+              />
+            )}
           </div>
         )}
 
