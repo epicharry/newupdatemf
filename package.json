@@ -19,7 +19,7 @@
     "electron": "electron .",
     "dist": "npm run build && electron-builder --publish=never",
     "pack": "npm run build && electron-builder --dir",
-    "postinstall": "electron-builder install-app-deps"
+    "rebuild": "electron-rebuild"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.56.0",
