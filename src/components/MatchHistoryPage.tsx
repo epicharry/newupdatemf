@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Crown, Clock, Target, Filter, ExternalLink, Moon, Sun, Loader2 } from 'lucide-react';
 import { PlayerInfo } from '../types/valorant';
 import { ProcessedMatch } from '../types/matchHistory';
-import { getProcessedMatchHistory, getProcessedCompetitiveHistory, getMatchDetailsForDisplay } from '../services/matchHistoryAPI';
+import { getProcessedMatchHistory, getProcessedCompetitiveHistory } from '../services/matchHistoryAPI';
 import { MatchDetailsPage } from './MatchDetailsPage';
 
 interface MatchHistoryPageProps {
@@ -21,9 +21,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
   const [matches, setMatches] = useState<ProcessedMatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [showCompetitiveOnly, setShowCompetitiveOnly] = useState(false);
-  const [loadingMatchId, setLoadingMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     loadMatchHistory();
@@ -52,25 +50,6 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
     const encodedName = encodeURIComponent(player.name);
     const trackerUrl = `https://tracker.gg/valorant/profile/riot/${encodedName}/overview`;
     (window as any).electronAPI?.openExternal?.(trackerUrl) || window.open(trackerUrl, '_blank');
-  };
-
-  const handleMatchClick = async (match: ProcessedMatch) => {
-    try {
-      setLoadingMatchId(match.matchId);
-      // Always fetch fresh match details - no caching
-      const matchDetails = await getMatchDetailsForDisplay(match.matchId, player.puuid);
-      if (matchDetails) {
-        setSelectedMatch(matchDetails);
-      }
-    } catch (error) {
-      console.error('Failed to load match details:', error);
-    } finally {
-      setLoadingMatchId(null);
-    }
-  };
-
-  const handleBackFromMatch = () => {
-    setSelectedMatch(null);
   };
 
   const getRankColor = (tier: number) => {
@@ -103,25 +82,6 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
     const seconds = Math.floor((lengthMs % (1000 * 60)) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-
-  // Show match details if a match is selected
-  if (selectedMatch) {
-    return (
-      <MatchDetailsPage
-        matchDetails={selectedMatch.matchDetails}
-        myTeam={selectedMatch.myTeam}
-        enemyTeam={selectedMatch.enemyTeam}
-        myTeamId={selectedMatch.myTeamId}
-        enemyTeamId={selectedMatch.enemyTeamId}
-        matchResult={selectedMatch.matchResult}
-        myTeamScore={selectedMatch.myTeamScore}
-        enemyTeamScore={selectedMatch.enemyTeamScore}
-        onBack={handleBackFromMatch}
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      />
-    );
-  }
 
   return (
     <div
@@ -383,8 +343,9 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                 isDarkMode={isDarkMode}
                 formatGameTime={formatGameTime}
                 formatGameLength={formatGameLength}
-                onMatchClick={handleMatchClick}
-                isLoading={loadingMatchId === match.matchId}
+                player={player}
+                isDarkMode={isDarkMode}
+                onToggleDarkMode={onToggleDarkMode}
               />
             ))
           )}
@@ -399,8 +360,9 @@ interface MatchCardProps {
   isDarkMode: boolean;
   formatGameTime: (timestamp: number) => string;
   formatGameLength: (lengthMs: number) => string;
-  onMatchClick: (match: ProcessedMatch) => void;
-  isLoading: boolean;
+  player: PlayerInfo;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
 }
 
 const MatchCard: React.FC<MatchCardProps> = ({
@@ -408,9 +370,52 @@ const MatchCard: React.FC<MatchCardProps> = ({
   isDarkMode,
   formatGameTime,
   formatGameLength,
-  onMatchClick,
-  isLoading
+  player,
+  isDarkMode,
+  onToggleDarkMode
 }) => {
+  const [selectedMatch, setSelectedMatch] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleMatchClick = async () => {
+    try {
+      setIsLoading(true);
+      // Dynamically import the function to avoid loading it until needed
+      const { getMatchDetailsForDisplay } = await import('../services/matchHistoryAPI');
+      const matchDetails = await getMatchDetailsForDisplay(match.matchId, player.puuid);
+      if (matchDetails) {
+        setSelectedMatch(matchDetails);
+      }
+    } catch (error) {
+      console.error('Failed to load match details:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackFromMatch = () => {
+    setSelectedMatch(null);
+  };
+
+  // Show match details if a match is selected
+  if (selectedMatch) {
+    return (
+      <MatchDetailsPage
+        matchDetails={selectedMatch.matchDetails}
+        myTeam={selectedMatch.myTeam}
+        enemyTeam={selectedMatch.enemyTeam}
+        myTeamId={selectedMatch.myTeamId}
+        enemyTeamId={selectedMatch.enemyTeamId}
+        matchResult={selectedMatch.matchResult}
+        myTeamScore={selectedMatch.myTeamScore}
+        enemyTeamScore={selectedMatch.enemyTeamScore}
+        onBack={handleBackFromMatch}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={onToggleDarkMode}
+      />
+    );
+  }
+
   const getResultBackgroundColor = () => {
     if (match.matchResult === 'victory') {
       return isDarkMode 
@@ -446,7 +451,7 @@ const MatchCard: React.FC<MatchCardProps> = ({
         ${getResultBackgroundColor()}
         ${isLoading ? 'pointer-events-none' : ''}
       `}
-      onClick={() => onMatchClick(match)}
+      onClick={handleMatchClick}
     >
       {/* Loading Overlay */}
       {isLoading && (

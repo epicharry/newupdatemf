@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, RefreshCw, Wifi, WifiOff, Users, Moon, Sun, Globe, History, Download, HelpCircle, MessageSquare } from 'lucide-react';
+import { Target, RefreshCw, Wifi, WifiOff, Users, Moon, Sun, Globe, History, Download, HelpCircle, MessageSquare, Clock } from 'lucide-react';
 
 interface HeaderProps {
   status: string;
@@ -19,6 +19,7 @@ interface HeaderProps {
   onViewSuggestions?: () => void;
   onViewAnalysis?: () => void;
   showAnalysisButton?: boolean;
+  refreshCooldown?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -38,7 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   onViewFAQ,
   onViewSuggestions,
   onViewAnalysis,
-  showAnalysisButton = false
+  showAnalysisButton = false,
+  refreshCooldown = 0
 }) => {
   const getStatusIcon = () => {
     if (status.includes('Agent Select')) {
@@ -223,18 +225,23 @@ export const Header: React.FC<HeaderProps> = ({
       {matchDetected && (
         <button
           onClick={onRefresh}
-          disabled={isLoading}
+          disabled={isLoading || refreshCooldown > 0}
           className={`
             px-6 py-3 rounded-xl font-medium transition-all duration-300
             backdrop-blur-sm border hover:scale-105 active:scale-95
             disabled:scale-100 disabled:cursor-not-allowed
             ${isDarkMode 
-              ? 'bg-blue-600/20 border-blue-500/30 text-blue-400 hover:bg-blue-600/30 disabled:bg-blue-800/20' 
-              : 'bg-blue-500/20 border-blue-400/30 text-blue-700 hover:bg-blue-500/30 disabled:bg-blue-400/20'
+              ? 'bg-blue-600/20 border-blue-500/30 text-blue-400 hover:bg-blue-600/30 disabled:bg-blue-800/20 disabled:text-blue-600' 
+              : 'bg-blue-500/20 border-blue-400/30 text-blue-700 hover:bg-blue-500/30 disabled:bg-blue-400/20 disabled:text-blue-600'
             }
           `}
         >
-          {isLoading ? (
+          {refreshCooldown > 0 ? (
+            <div className="flex items-center space-x-2">
+              <Clock className="w-4 h-4" />
+              <span>Wait {refreshCooldown}s</span>
+            </div>
+          ) : isLoading ? (
             <div className="flex items-center space-x-2">
               <RefreshCw className="w-4 h-4 animate-spin" />
               <span>Refreshing...</span>

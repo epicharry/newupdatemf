@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { MyTeamSection, EnemyTeamSection } from './components/TeamSection';
 import { MatchHistoryPage } from './components/MatchHistoryPage';
+import { WelcomeScreen } from './components/WelcomeScreen';
 import { FAQPage } from './components/FAQPage';
 import { SuggestionsPage } from './components/SuggestionsPage';
 import { AnalysisPage } from './components/AnalysisPage';
@@ -34,6 +35,8 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [databaseConnectionFailed, setDatabaseConnectionFailed] = useState(false);
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState(true);
+  const [refreshCooldown, setRefreshCooldown] = useState(0);
 
   const {
     status,
@@ -47,6 +50,16 @@ function App() {
     refresh,
     currentRegion
   } = useValorantData();
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (refreshCooldown > 0) {
+      const timer = setTimeout(() => {
+        setRefreshCooldown(refreshCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [refreshCooldown]);
 
   // Check database connection on app launch
   useEffect(() => {
@@ -214,6 +227,17 @@ function App() {
     setCurrentView('main');
   };
 
+  const handleContinueFromWelcome = () => {
+    setShowWelcomeScreen(false);
+  };
+
+  const handleRefreshWithCooldown = () => {
+    if (refreshCooldown > 0) return;
+    
+    refresh();
+    setRefreshCooldown(10); // 10 second cooldown
+  };
+
   const handleCheckUpdates = () => {
     setShowUpdateModal(true);
   };
@@ -240,6 +264,17 @@ function App() {
           </p>
         </div>
       </div>
+    );
+  }
+
+  // Show welcome screen if enabled and user is available
+  if (showWelcomeScreen && currentUser && !isMaintenanceMode && !isBanned && !databaseConnectionFailed) {
+    return (
+      <WelcomeScreen
+        currentUser={currentUser}
+        isDarkMode={isDarkMode}
+        onContinue={handleContinueFromWelcome}
+      />
     );
   }
 
@@ -373,7 +408,7 @@ function App() {
           isConnected={isConnected}
           playerCount={totalPlayers}
           matchDetected={matchDetected}
-          onRefresh={refresh}
+          onRefresh={handleRefreshWithCooldown}
           isDarkMode={isDarkMode}
           onToggleDarkMode={toggleDarkMode}
           currentRegion={currentRegion}
@@ -384,6 +419,7 @@ function App() {
           onViewSuggestions={handleViewSuggestions}
           onViewAnalysis={handleViewAnalysis}
           showAnalysisButton={isConnected && matchDetected && (myTeamPlayers.length > 0 || enemyTeamPlayers.length > 0)}
+          refreshCooldown={refreshCooldown}
         />
 
         {/* Teams Container */}
