@@ -116,7 +116,7 @@ export class MatchHistoryAPI {
       const processedMatches: ProcessedMatch[] = [];
 
       for (const historyEntry of history) {
-        // Only create basic match info without fetching full details
+        // Create basic match info with minimal data for fast loading
         const basicMatch: ProcessedMatch = {
           matchId: historyEntry.MatchID,
           gameStartTime: historyEntry.gameStartMillis,
@@ -329,4 +329,3 @@ export const getProcessedCompetitiveHistory = async (puuid: string, limit: numbe
 export const getFullMatchData = async (matchId: string, puuid: string): Promise<ProcessedMatch | null> => {
   if (!matchHistoryAPI) return null;
   return matchHistoryAPI.getFullMatchData(matchId, puuid);
-}
