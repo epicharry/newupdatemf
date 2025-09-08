@@ -361,7 +361,6 @@ interface MatchCardProps {
   formatGameTime: (timestamp: number) => string;
   formatGameLength: (lengthMs: number) => string;
   player: PlayerInfo;
-  isDarkMode: boolean;
   onToggleDarkMode: () => void;
 }
 
@@ -371,7 +370,6 @@ const MatchCard: React.FC<MatchCardProps> = ({
   formatGameTime,
   formatGameLength,
   player,
-  isDarkMode,
   onToggleDarkMode
 }) => {
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
