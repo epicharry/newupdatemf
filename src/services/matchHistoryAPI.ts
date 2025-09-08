@@ -112,27 +112,58 @@ export class MatchHistoryAPI {
 
   async getProcessedMatchHistory(puuid: string, limit: number = 10): Promise<ProcessedMatch[]> {
     try {
-      // Always fetch fresh data - no caching
       const history = await this.getMatchHistory(puuid, 0, limit);
-      const competitiveUpdates = await this.getCompetitiveUpdates(puuid);
       const processedMatches: ProcessedMatch[] = [];
 
       for (const historyEntry of history) {
-        // Always fetch fresh match details
-        const matchDetails = await this.getMatchDetails(historyEntry.MatchID);
-        if (matchDetails) {
-          const competitiveUpdate = competitiveUpdates.find(update => update.MatchID === historyEntry.MatchID);
-          const processed = this.processMatchData(matchDetails, puuid, competitiveUpdate);
-          if (processed) {
-            processedMatches.push(processed);
-          }
-        }
+        // Only create basic match info without fetching full details
+        const basicMatch: ProcessedMatch = {
+          matchId: historyEntry.MatchID,
+          gameStartTime: historyEntry.gameStartMillis,
+          mapName: 'Loading...',
+          mapImage: 'https://via.placeholder.com/300x200?text=Loading',
+          queueType: historyEntry.queueID || 'Unknown',
+          isRanked: historyEntry.queueID === 'competitive',
+          playerStats: {
+            kills: 0,
+            deaths: 0,
+            assists: 0,
+            score: 0,
+            agent: 'Loading...',
+            agentImage: 'https://via.placeholder.com/64x64?text=?',
+            kda: '? / ? / ?'
+          },
+          matchResult: 'defeat',
+          teamScore: 0,
+          enemyScore: 0,
+          scoreDisplay: '? – ?',
+          isTeamMVP: false,
+          competitiveTier: 0,
+          gameLength: 0,
+          rrChange: undefined
+        };
+        processedMatches.push(basicMatch);
       }
 
       return processedMatches.sort((a, b) => b.gameStartTime - a.gameStartTime);
     } catch (error) {
       console.error('Failed to get processed match history:', error);
       return [];
+    }
+  }
+
+  async getFullMatchData(matchId: string, puuid: string): Promise<ProcessedMatch | null> {
+    try {
+      const matchDetails = await this.getMatchDetails(matchId);
+      if (!matchDetails) return null;
+
+      const competitiveUpdates = await this.getCompetitiveUpdates(puuid);
+      const competitiveUpdate = competitiveUpdates.find(update => update.MatchID === matchId);
+      
+      return this.processMatchData(matchDetails, puuid, competitiveUpdate);
+    } catch (error) {
+      console.error('Failed to get full match data:', error);
+      return null;
     }
   }
 
@@ -294,3 +325,8 @@ export const getProcessedCompetitiveHistory = async (puuid: string, limit: numbe
   if (!matchHistoryAPI) return [];
   return matchHistoryAPI.getProcessedCompetitiveHistory(puuid, limit);
 };
+
+export const getFullMatchData = async (matchId: string, puuid: string): Promise<ProcessedMatch | null> => {
+  if (!matchHistoryAPI) return null;
+  return matchHistoryAPI.getFullMatchData(matchId, puuid);
+}
