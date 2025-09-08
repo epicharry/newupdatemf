@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Crown, Clock, Target, Filter, ExternalLink, Moon, Sun, Loader2 } from 'lucide-react';
 import { PlayerInfo } from '../types/valorant';
 import { ProcessedMatch } from '../types/matchHistory';
-import { getProcessedMatchHistory, getProcessedCompetitiveHistory, getFullMatchData } from '../services/matchHistoryAPI';
+import { getProcessedMatchHistory, getProcessedCompetitiveHistory } from '../services/matchHistoryAPI';
 import { MatchDetailsPage } from './MatchDetailsPage';
 
 interface MatchHistoryPageProps {
@@ -346,11 +346,6 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                 player={player}
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={onToggleDarkMode}
-                onMatchUpdate={(matchId, updatedMatch) => {
-                  setMatches(prevMatches => 
-                    prevMatches.map(m => m.matchId === matchId ? updatedMatch : m)
-                  );
-                }}
               />
             ))
           )}
@@ -367,7 +362,6 @@ interface MatchCardProps {
   formatGameLength: (lengthMs: number) => string;
   player: PlayerInfo;
   onToggleDarkMode: () => void;
-  onMatchUpdate: (matchId: string, updatedMatch: ProcessedMatch) => void;
 }
 
 const MatchCard: React.FC<MatchCardProps> = ({
@@ -376,27 +370,14 @@ const MatchCard: React.FC<MatchCardProps> = ({
   formatGameTime,
   formatGameLength,
   player,
-  onToggleDarkMode,
-  onMatchUpdate
+  onToggleDarkMode
 }) => {
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   const handleMatchClick = async () => {
     try {
       setIsLoading(true);
-      
-      // First, load full match data if not already loaded
-      if (match.mapName === 'Loading...' || match.playerStats.agent === 'Loading...') {
-        setIsLoadingDetails(true);
-        const fullMatchData = await getFullMatchData(match.matchId, player.puuid);
-        if (fullMatchData) {
-          onMatchUpdate(match.matchId, fullMatchData);
-        }
-        setIsLoadingDetails(false);
-      }
-      
       // Dynamically import the function to avoid loading it until needed
       const { getMatchDetailsForDisplay } = await import('../services/matchHistoryAPI');
       const matchDetails = await getMatchDetailsForDisplay(match.matchId, player.puuid);
@@ -407,7 +388,6 @@ const MatchCard: React.FC<MatchCardProps> = ({
       console.error('Failed to load match details:', error);
     } finally {
       setIsLoading(false);
-      setIsLoadingDetails(false);
     }
   };
 
@@ -476,9 +456,7 @@ const MatchCard: React.FC<MatchCardProps> = ({
         <div className="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
           <div className="flex items-center space-x-2 text-white">
             <Loader2 className="w-6 h-6 animate-spin" />
-            <span className="font-medium">
-              {isLoadingDetails ? 'Loading match data...' : 'Loading details...'}
-            </span>
+            <span className="font-medium">Loading details...</span>
           </div>
         </div>
       )}
