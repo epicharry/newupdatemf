@@ -344,7 +344,6 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                 formatGameTime={formatGameTime}
                 formatGameLength={formatGameLength}
                 player={player}
-                isDarkMode={isDarkMode}
                 onToggleDarkMode={onToggleDarkMode}
                 onMatchUpdate={(matchId, updatedMatch) => {
                   setMatches(prev => prev.map(m => m.matchId === matchId ? updatedMatch : m));
