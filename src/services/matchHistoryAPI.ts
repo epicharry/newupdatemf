@@ -329,4 +329,3 @@ export const getProcessedCompetitiveHistory = async (puuid: string, limit: numbe
 export const getFullMatchData = async (matchId: string, puuid: string): Promise<ProcessedMatch | null> => {
   if (!matchHistoryAPI) return null;
   return matchHistoryAPI.getFullMatchData(matchId, puuid);
-};
