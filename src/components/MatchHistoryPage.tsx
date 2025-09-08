@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Crown, Clock, Target, Filter, ExternalLink, Moon, Sun, Loader2 } from 'lucide-react';
 import { PlayerInfo } from '../types/valorant';
 import { ProcessedMatch } from '../types/matchHistory';
-import { getProcessedMatchHistory, getProcessedCompetitiveHistory, getFullMatchData } from '../services/matchHistoryAPI';
+import { getProcessedMatchHistory, getProcessedCompetitiveHistory } from '../services/matchHistoryAPI';
 import { MatchDetailsPage } from './MatchDetailsPage';
 
 interface MatchHistoryPageProps {
@@ -32,7 +32,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
     try {
       setIsLoading(true);
       setError('');
-      // Fetch basic match list without detailed match data
+      // Always fetch fresh data - no caching
       const matchHistory = showCompetitiveOnly
         ? await getProcessedCompetitiveHistory(player.puuid, 15)
         : await getProcessedMatchHistory(player.puuid, 15);
@@ -344,10 +344,8 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                 formatGameTime={formatGameTime}
                 formatGameLength={formatGameLength}
                 player={player}
+                isDarkMode={isDarkMode}
                 onToggleDarkMode={onToggleDarkMode}
-                onMatchUpdate={(matchId, updatedMatch) => {
-                  setMatches(prev => prev.map(m => m.matchId === matchId ? updatedMatch : m));
-                }}
               />
             ))
           )}
@@ -363,8 +361,8 @@ interface MatchCardProps {
   formatGameTime: (timestamp: number) => string;
   formatGameLength: (lengthMs: number) => string;
   player: PlayerInfo;
+  isDarkMode: boolean;
   onToggleDarkMode: () => void;
-  onMatchUpdate: (matchId: string, updatedMatch: ProcessedMatch) => void;
 }
 
 const MatchCard: React.FC<MatchCardProps> = ({
@@ -373,39 +371,18 @@ const MatchCard: React.FC<MatchCardProps> = ({
   formatGameTime,
   formatGameLength,
   player,
-  onToggleDarkMode,
-  onMatchUpdate
+  isDarkMode,
+  onToggleDarkMode
 }) => {
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [fullMatchData, setFullMatchData] = useState<ProcessedMatch | null>(null);
-
-  // Use full match data if available, otherwise use the basic match data
-  const displayMatch = fullMatchData || match;
 
   const handleMatchClick = async () => {
-    // If we don't have full match data yet, load it first
-    if (!fullMatchData && match.playerStats.agent === 'Loading...') {
-      try {
-        setIsLoading(true);
-        const fullData = await getFullMatchData(match.matchId, player.puuid);
-        if (fullData) {
-          setFullMatchData(fullData);
-          onMatchUpdate(match.matchId, fullData);
-        }
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Failed to load full match data:', error);
-        setIsLoading(false);
-        return;
-      }
-    }
-
     try {
       setIsLoading(true);
       // Dynamically import the function to avoid loading it until needed
       const { getMatchDetailsForDisplay } = await import('../services/matchHistoryAPI');
-      const matchDetails = await getMatchDetailsForDisplay(displayMatch.matchId, player.puuid);
+      const matchDetails = await getMatchDetailsForDisplay(match.matchId, player.puuid);
       if (matchDetails) {
         setSelectedMatch(matchDetails);
       }
@@ -440,11 +417,11 @@ const MatchCard: React.FC<MatchCardProps> = ({
   }
 
   const getResultBackgroundColor = () => {
-    if (displayMatch.matchResult === 'victory') {
+    if (match.matchResult === 'victory') {
       return isDarkMode 
         ? 'bg-green-600/20 border-green-500/30 shadow-green-500/20' 
         : 'bg-green-500/15 border-green-400/30 shadow-green-400/20';
-    } else if (displayMatch.matchResult === 'defeat') {
+    } else if (match.matchResult === 'defeat') {
       return isDarkMode 
         ? 'bg-red-600/20 border-red-500/30 shadow-red-500/20' 
         : 'bg-red-500/15 border-red-400/30 shadow-red-400/20';
@@ -455,14 +432,14 @@ const MatchCard: React.FC<MatchCardProps> = ({
   };
 
   const getResultText = () => {
-    if (displayMatch.matchResult === 'victory') return 'VICTORY';
-    if (displayMatch.matchResult === 'defeat') return 'DEFEAT';
+    if (match.matchResult === 'victory') return 'VICTORY';
+    if (match.matchResult === 'defeat') return 'DEFEAT';
     return 'DRAW';
   };
 
   const getResultTextColor = () => {
-    if (displayMatch.matchResult === 'victory') return 'text-green-400';
-    if (displayMatch.matchResult === 'defeat') return 'text-red-400';
+    if (match.matchResult === 'victory') return 'text-green-400';
+    if (match.matchResult === 'defeat') return 'text-red-400';
     return 'text-yellow-400';
   };
 
@@ -493,12 +470,12 @@ const MatchCard: React.FC<MatchCardProps> = ({
           <div className="relative">
             <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/20">
               <img
-                src={displayMatch.playerStats.agentImage}
-                alt={displayMatch.playerStats.agent}
+                src={match.playerStats.agentImage}
+                alt={match.playerStats.agent}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = `https://via.placeholder.com/64x64?text=${displayMatch.playerStats.agent[0]}`;
+                  target.src = `https://via.placeholder.com/64x64?text=${match.playerStats.agent[0]}`;
                 }}
               />
             </div>
@@ -508,8 +485,8 @@ const MatchCard: React.FC<MatchCardProps> = ({
           <div>
             <div className="flex items-center space-x-3 mb-2">
               <span className={`font-bold text-lg ${getResultTextColor()}`}>{getResultText()}</span>
-              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>{displayMatch.queueType}</span>
-              {displayMatch.isTeamMVP && (
+              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>{match.queueType}</span>
+              {match.isTeamMVP && (
                 <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30">
                   <Crown className="w-3 h-3 text-yellow-400" />
                   <span className="text-xs text-yellow-400 font-medium">MVP</span>
@@ -519,34 +496,34 @@ const MatchCard: React.FC<MatchCardProps> = ({
 
             {/* KDA */}
             <div className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-              {displayMatch.playerStats.kda}
+              {match.playerStats.kda}
             </div>
 
             {/* Additional Info */}
             <div className={`text-sm mt-2 flex items-center space-x-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               <div className="flex items-center space-x-1">
                 <Clock className="w-3 h-3" />
-                <span>{formatGameTime(displayMatch.gameStartTime)}</span>
+                <span>{formatGameTime(match.gameStartTime)}</span>
               </div>
-              {displayMatch.rrChange !== undefined && displayMatch.isRanked && (
+              {match.rrChange !== undefined && match.isRanked && (
                 <div
                   className={`flex items-center space-x-1 font-semibold ${
-                    displayMatch.rrChange > 0 ? 'text-green-400' : displayMatch.rrChange < 0 ? 'text-red-400' : 'text-gray-400'
+                    match.rrChange > 0 ? 'text-green-400' : match.rrChange < 0 ? 'text-red-400' : 'text-gray-400'
                   }`}
                 >
-                  <span>{displayMatch.rrChange > 0 ? '+' : ''}{displayMatch.rrChange} RR</span>
+                  <span>{match.rrChange > 0 ? '+' : ''}{match.rrChange} RR</span>
                 </div>
               )}
-              <span>{formatGameLength(displayMatch.gameLength)}</span>
+              <span>{formatGameLength(match.gameLength)}</span>
             </div>
           </div>
         </div>
 
         {/* Center: Score - Fixed positioning */}
         <div className="flex flex-col items-center justify-center min-w-[120px]">
-          <div className={`text-2xl font-bold mb-1 ${getResultTextColor()}`}>{displayMatch.scoreDisplay}</div>
+          <div className={`text-2xl font-bold mb-1 ${getResultTextColor()}`}>{match.scoreDisplay}</div>
           <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            {formatGameLength(displayMatch.gameLength)}
+            {formatGameLength(match.gameLength)}
           </div>
         </div>
 
@@ -554,8 +531,8 @@ const MatchCard: React.FC<MatchCardProps> = ({
         <div className="text-right min-w-[120px]">
           <div className="w-36 h-24 rounded-lg overflow-hidden mb-2 ring-2 ring-white/20">
             <img
-              src={displayMatch.mapImage}
-              alt={displayMatch.mapName}
+              src={match.mapImage}
+              alt={match.mapName}
               className="w-full h-full object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
@@ -563,7 +540,7 @@ const MatchCard: React.FC<MatchCardProps> = ({
               }}
             />
           </div>
-          <div className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-medium`}>{displayMatch.mapName}</div>
+          <div className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-medium`}>{match.mapName}</div>
         </div>
       </div>
     </div>
