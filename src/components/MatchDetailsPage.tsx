@@ -31,7 +31,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
   isDarkMode,
   onToggleDarkMode,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'economy'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline'>('overview');
   
   const mapInfo = MAPS[matchDetails.matchInfo.mapId] || { 
     name: 'Unknown Map', 
@@ -217,8 +217,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
           <div className="flex space-x-2 mb-6">
             {[
               { id: 'overview', label: 'Overview', icon: Users },
-              { id: 'timeline', label: 'Timeline', icon: Activity },
-              { id: 'economy', label: 'Economy', icon: Target }
+              { id: 'timeline', label: 'Timeline', icon: Activity }
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -245,36 +244,35 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className={`${
+            matchDetails.matchInfo.queueID === 'deathmatch' 
+              ? 'max-w-3xl mx-auto' 
+              : 'grid lg:grid-cols-2 gap-8'
+          }`}>
             <TeamDetailsSection
-              title={`Your Team (${myTeamId})`}
+              title={matchDetails.matchInfo.queueID === 'deathmatch' ? 'All Players' : `Your Team (${myTeamId})`}
               players={myTeam}
               isMyTeam={true}
               isDarkMode={isDarkMode}
               getRankColor={getRankColor}
+              allPlayers={[...myTeam, ...enemyTeam]}
             />
-            <TeamDetailsSection
-              title={`Enemy Team (${enemyTeamId})`}
-              players={enemyTeam}
-              isMyTeam={false}
-              isDarkMode={isDarkMode}
-              getRankColor={getRankColor}
-            />
+            {matchDetails.matchInfo.queueID !== 'deathmatch' && (
+              <TeamDetailsSection
+                title={`Enemy Team (${enemyTeamId})`}
+                players={enemyTeam}
+                isMyTeam={false}
+                isDarkMode={isDarkMode}
+                getRankColor={getRankColor}
+                allPlayers={[...myTeam, ...enemyTeam]}
+              />
+            )}
           </div>
         )}
 
         {activeTab === 'timeline' && (
           <MatchTimeline
             timelineData={timelineData}
-            allPlayers={[...myTeam, ...enemyTeam]}
-            myTeamId={myTeamId}
-            isDarkMode={isDarkMode}
-          />
-        )}
-
-        {activeTab === 'economy' && (
-          <EconomyAnalysis
-            roundResults={matchDetails.roundResults || []}
             allPlayers={[...myTeam, ...enemyTeam]}
             myTeamId={myTeamId}
             isDarkMode={isDarkMode}
@@ -291,6 +289,7 @@ interface TeamDetailsSectionProps {
   isMyTeam: boolean;
   isDarkMode: boolean;
   getRankColor: (tier: number) => string;
+  allPlayers: MatchPlayer[];
 }
 
 const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
@@ -298,11 +297,13 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
   players,
   isMyTeam,
   isDarkMode,
-  getRankColor
+  getRankColor,
+  allPlayers
 }) => {
   // Sort players by score (highest first)
   const sortedPlayers = [...players].sort((a, b) => b.stats.score - a.stats.score);
-  const teamMVP = sortedPlayers[0];
+  // Find the overall match MVP (highest kills across all players)
+  const matchMVP = [...allPlayers].sort((a, b) => b.stats.kills - a.stats.kills)[0];
 
   return (
     <div className={`
@@ -350,7 +351,7 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
           <PlayerDetailsCard
             key={player.subject}
             player={player}
-            isTeamMVP={player.subject === teamMVP.subject}
+            isMatchMVP={player.subject === matchMVP.subject}
             isDarkMode={isDarkMode}
             getRankColor={getRankColor}
           />
@@ -362,14 +363,14 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
 
 interface PlayerDetailsCardProps {
   player: MatchPlayer;
-  isTeamMVP: boolean;
+  isMatchMVP: boolean;
   isDarkMode: boolean;
   getRankColor: (tier: number) => string;
 }
 
 const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
   player,
-  isTeamMVP,
+  isMatchMVP,
   isDarkMode,
   getRankColor
 }) => {
@@ -409,10 +410,10 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
               }`}>
                 {player.gameName}#{player.tagLine}
               </span>
-              {isTeamMVP && (
+              {isMatchMVP && (
                 <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30">
                   <Crown className="w-3 h-3 text-yellow-400" />
-                  <span className="text-xs text-yellow-400 font-medium">MVP</span>
+                  <span className="text-xs text-yellow-400 font-medium">Match MVP</span>
                 </div>
               )}
             </div>
@@ -639,173 +640,6 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
           )}
         </div>
       ))}
-    </div>
-  );
-};
-
-interface EconomyAnalysisProps {
-  roundResults: any[];
-  allPlayers: MatchPlayer[];
-  myTeamId: string;
-  isDarkMode: boolean;
-}
-
-const EconomyAnalysis: React.FC<EconomyAnalysisProps> = ({
-  roundResults,
-  allPlayers,
-  myTeamId,
-  isDarkMode
-}) => {
-  const getPlayerName = (puuid: string) => {
-    const player = allPlayers.find(p => p.subject === puuid);
-    return player ? `${player.gameName}#${player.tagLine}` : 'Unknown';
-  };
-
-  const getWeaponName = (weaponId: string) => {
-    const weaponNames: Record<string, string> = {
-      '29A0CFAB-485B-F5D5-779A-B59F85E204A8': 'Classic',
-      '1BAA85B4-4C70-1284-64BB-6481DFC3BB4E': 'Shorty',
-      '44D4E95C-4157-0037-81B2-17841BF2E8E3': 'Frenzy',
-      '29A0CFAB-485B-F5D5-779A-B59F85E204A8': 'Ghost',
-      'E336C6B8-418D-9340-D77F-7A9E4CFE0702': 'Sheriff',
-      'F7E1B454-4AD4-1063-EC0A-159E56B58941': 'Stinger',
-      '462080D1-4035-2937-7C09-27AA2A5C27A7': 'Spectre',
-      'C4883E50-4494-202C-3EC3-6B8A9284F00B': 'Bucky',
-      '910BE174-449B-C412-AB22-D0873436B21B': 'Judge',
-      'EC845BF4-4F79-DDDA-A3DA-0DB3774B2794': 'Bulldog',
-      'AE3DE142-4D85-2547-DD26-4E90BED35CF7': 'Guardian',
-      '4ADE7FAA-4CF1-8376-95EF-39884480959B': 'Phantom',
-      '9C82E19D-4575-0200-1A81-3EACF00CF872': 'Vandal',
-      'C4883E50-4494-202C-3EC3-6B8A9284F00B': 'Marshal',
-      'A03B24D3-4319-996D-0F8C-94BBFBA1DFC7': 'Operator',
-      '55D8A0F4-4274-CA67-FE2C-06AB45EFDF58': 'Ares',
-      '63E6C2B6-4A8E-869C-3D4C-E38355226584': 'Odin',
-      'EE8E8D15-496B-07AC-E5F6-8FAE5D4C7B1A': 'Outlaw',
-      '5F0AAF7A-4289-3998-D5FF-EB9A5CF7EF5C': 'Tour de Force'
-    };
-    return weaponNames[weaponId] || 'Unknown';
-  };
-
-  const getArmorName = (armorId: string) => {
-    const armorNames: Record<string, string> = {
-      '4DEC83D5-4902-9AB3-BED6-A7A390761157': 'Light Armor',
-      'B1B9086D-41BD-A516-5D29-E3B34A6F1644': 'Heavy Armor',
-      '822BCAB2-40A2-324E-C137-E09195AD7692': 'Heavy Armor'
-    };
-    return armorNames[armorId] || '';
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className={`
-        rounded-3xl p-6 backdrop-blur-xl border transition-all duration-300
-        ${isDarkMode 
-          ? 'bg-slate-900/40 border-slate-700/50' 
-          : 'bg-white/20 border-white/30'
-        }
-      `}>
-        <h3 className={`text-xl font-bold mb-4 ${
-          isDarkMode ? 'text-white' : 'text-gray-800'
-        }`}>
-          Economy Analysis
-        </h3>
-        
-        <div className="grid gap-4">
-          {roundResults.slice(0, 5).map((round) => (
-            <div
-              key={round.roundNum}
-              className={`
-                p-4 rounded-xl backdrop-blur-sm border
-                ${isDarkMode 
-                  ? 'bg-slate-800/40 border-slate-700/50' 
-                  : 'bg-white/20 border-white/30'
-                }
-              `}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h4 className={`font-semibold ${
-                  isDarkMode ? 'text-white' : 'text-gray-800'
-                }`}>
-                  Round {round.roundNum + 1}
-                </h4>
-                <div className={`text-sm ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  {round.winningTeam === myTeamId ? 'Won' : 'Lost'}
-                </div>
-              </div>
-              
-              {round.playerEconomies && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h5 className={`text-sm font-medium mb-2 ${
-                      isDarkMode ? 'text-blue-300' : 'text-blue-700'
-                    }`}>
-                      Your Team
-                    </h5>
-                    <div className="space-y-1">
-                      {round.playerEconomies
-                        .filter((eco: any) => {
-                          const player = allPlayers.find(p => p.subject === eco.subject);
-                          return player?.teamId === myTeamId;
-                        })
-                        .map((eco: any) => (
-                          <div
-                            key={eco.subject}
-                            className={`text-xs ${
-                              isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                            }`}
-                          >
-                            <span className="font-medium">
-                              {getPlayerName(eco.subject).split('#')[0]}
-                            </span>
-                            : {getWeaponName(eco.weapon)} 
-                            {eco.armor && ` + ${getArmorName(eco.armor)}`}
-                            <span className="ml-2 text-green-400">
-                              ${eco.remaining}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h5 className={`text-sm font-medium mb-2 ${
-                      isDarkMode ? 'text-red-300' : 'text-red-700'
-                    }`}>
-                      Enemy Team
-                    </h5>
-                    <div className="space-y-1">
-                      {round.playerEconomies
-                        .filter((eco: any) => {
-                          const player = allPlayers.find(p => p.subject === eco.subject);
-                          return player?.teamId !== myTeamId;
-                        })
-                        .map((eco: any) => (
-                          <div
-                            key={eco.subject}
-                            className={`text-xs ${
-                              isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                            }`}
-                          >
-                            <span className="font-medium">
-                              {getPlayerName(eco.subject).split('#')[0]}
-                            </span>
-                            : {getWeaponName(eco.weapon)}
-                            {eco.armor && ` + ${getArmorName(eco.armor)}`}
-                            <span className="ml-2 text-green-400">
-                              ${eco.remaining}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };
