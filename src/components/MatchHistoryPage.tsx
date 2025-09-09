@@ -413,7 +413,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                         {match.isTeamMVP && (
                           <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30">
                             <Crown className="w-3 h-3 text-yellow-400" />
-                            <span className="text-xs text-yellow-400 font-medium">MVP</span>
+                            <span className="text-xs text-yellow-400 font-medium">Match MVP</span>
                           </div>
                         )}
                       </div>
