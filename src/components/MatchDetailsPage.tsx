@@ -450,3 +450,362 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
     </div>
   );
 };
+
+interface MatchTimelineProps {
+  timelineData: any[];
+  allPlayers: MatchPlayer[];
+  myTeamId: string;
+  isDarkMode: boolean;
+}
+
+const MatchTimeline: React.FC<MatchTimelineProps> = ({
+  timelineData,
+  allPlayers,
+  myTeamId,
+  isDarkMode
+}) => {
+  const getPlayerName = (puuid: string) => {
+    const player = allPlayers.find(p => p.subject === puuid);
+    return player ? `${player.gameName}#${player.tagLine}` : 'Unknown';
+  };
+
+  const getPlayerAgent = (puuid: string) => {
+    const player = allPlayers.find(p => p.subject === puuid);
+    return player ? AGENTS[player.characterId] || 'Unknown' : 'Unknown';
+  };
+
+  const formatRoundTime = (timeMs: number) => {
+    const seconds = Math.floor(timeMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const getKillIcon = (damageType: string) => {
+    switch (damageType.toLowerCase()) {
+      case 'weapon':
+        return <Target className="w-3 h-3" />;
+      case 'ability':
+        return <Zap className="w-3 h-3" />;
+      case 'bomb':
+        return <Bomb className="w-3 h-3" />;
+      case 'melee':
+        return <Skull className="w-3 h-3" />;
+      default:
+        return <Target className="w-3 h-3" />;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {timelineData.map((round) => (
+        <div
+          key={round.roundNum}
+          className={`
+            rounded-2xl p-6 backdrop-blur-xl border transition-all duration-300
+            ${isDarkMode 
+              ? 'bg-slate-900/40 border-slate-700/50' 
+              : 'bg-white/20 border-white/30'
+            }
+          `}
+        >
+          {/* Round Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className={`
+                px-3 py-1 rounded-full text-sm font-bold
+                ${round.winningTeam === myTeamId
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                }
+              `}>
+                Round {round.roundNum + 1}
+              </div>
+              <div className={`text-sm ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                {round.winningTeam === myTeamId ? 'WON' : 'LOST'} • {round.result}
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {round.bombPlanted && (
+                <div className="flex items-center space-x-1 text-orange-400">
+                  <Bomb className="w-4 h-4" />
+                  <span className="text-sm">
+                    {round.plantSite ? `${round.plantSite} Site` : 'Planted'}
+                  </span>
+                </div>
+              )}
+              {round.bombDefused && (
+                <div className="flex items-center space-x-1 text-blue-400">
+                  <Shield className="w-4 h-4" />
+                  <span className="text-sm">Defused</span>
+                </div>
+              )}
+              <div className={`text-sm ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                {formatRoundTime(round.duration)}
+              </div>
+            </div>
+          </div>
+
+          {/* Kills Timeline */}
+          {round.kills.length > 0 && (
+            <div className="space-y-2">
+              <h4 className={`text-sm font-medium mb-3 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Eliminations ({round.kills.length})
+              </h4>
+              <div className="space-y-2">
+                {round.kills.map((kill, killIndex) => {
+                  const killerPlayer = allPlayers.find(p => p.subject === kill.killer);
+                  const victimPlayer = allPlayers.find(p => p.subject === kill.victim);
+                  const isTeamKill = killerPlayer?.teamId === myTeamId;
+                  
+                  return (
+                    <div
+                      key={killIndex}
+                      className={`
+                        flex items-center justify-between p-3 rounded-lg backdrop-blur-sm border
+                        ${isDarkMode 
+                          ? 'bg-slate-800/40 border-slate-700/50' 
+                          : 'bg-white/20 border-white/30'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`
+                          p-1 rounded-full
+                          ${isTeamKill 
+                            ? 'bg-green-500/20 text-green-400' 
+                            : 'bg-red-500/20 text-red-400'
+                          }
+                        `}>
+                          {getKillIcon(kill.finishingDamage.damageType)}
+                        </div>
+                        
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className={`font-medium ${
+                              isDarkMode ? 'text-white' : 'text-gray-800'
+                            }`}>
+                              {getPlayerName(kill.killer)}
+                            </span>
+                            <span className={`text-xs ${
+                              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
+                              ({getPlayerAgent(kill.killer)})
+                            </span>
+                            <span className={`text-sm ${
+                              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
+                              eliminated
+                            </span>
+                            <span className={`font-medium ${
+                              isDarkMode ? 'text-white' : 'text-gray-800'
+                            }`}>
+                              {getPlayerName(kill.victim)}
+                            </span>
+                            <span className={`text-xs ${
+                              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
+                              ({getPlayerAgent(kill.victim)})
+                            </span>
+                          </div>
+                          
+                          {kill.assistants.length > 0 && (
+                            <div className={`text-xs mt-1 ${
+                              isDarkMode ? 'text-gray-500' : 'text-gray-500'
+                            }`}>
+                              Assisted by: {kill.assistants.map(getPlayerName).join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className={`text-sm ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        {formatRoundTime(kill.roundTime)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+interface EconomyAnalysisProps {
+  roundResults: any[];
+  allPlayers: MatchPlayer[];
+  myTeamId: string;
+  isDarkMode: boolean;
+}
+
+const EconomyAnalysis: React.FC<EconomyAnalysisProps> = ({
+  roundResults,
+  allPlayers,
+  myTeamId,
+  isDarkMode
+}) => {
+  const getPlayerName = (puuid: string) => {
+    const player = allPlayers.find(p => p.subject === puuid);
+    return player ? `${player.gameName}#${player.tagLine}` : 'Unknown';
+  };
+
+  const getWeaponName = (weaponId: string) => {
+    const weaponNames: Record<string, string> = {
+      '29A0CFAB-485B-F5D5-779A-B59F85E204A8': 'Classic',
+      '1BAA85B4-4C70-1284-64BB-6481DFC3BB4E': 'Shorty',
+      '44D4E95C-4157-0037-81B2-17841BF2E8E3': 'Frenzy',
+      '29A0CFAB-485B-F5D5-779A-B59F85E204A8': 'Ghost',
+      'E336C6B8-418D-9340-D77F-7A9E4CFE0702': 'Sheriff',
+      'F7E1B454-4AD4-1063-EC0A-159E56B58941': 'Stinger',
+      '462080D1-4035-2937-7C09-27AA2A5C27A7': 'Spectre',
+      'C4883E50-4494-202C-3EC3-6B8A9284F00B': 'Bucky',
+      '910BE174-449B-C412-AB22-D0873436B21B': 'Judge',
+      'EC845BF4-4F79-DDDA-A3DA-0DB3774B2794': 'Bulldog',
+      'AE3DE142-4D85-2547-DD26-4E90BED35CF7': 'Guardian',
+      '4ADE7FAA-4CF1-8376-95EF-39884480959B': 'Phantom',
+      '9C82E19D-4575-0200-1A81-3EACF00CF872': 'Vandal',
+      'C4883E50-4494-202C-3EC3-6B8A9284F00B': 'Marshal',
+      'A03B24D3-4319-996D-0F8C-94BBFBA1DFC7': 'Operator',
+      '55D8A0F4-4274-CA67-FE2C-06AB45EFDF58': 'Ares',
+      '63E6C2B6-4A8E-869C-3D4C-E38355226584': 'Odin',
+      'EE8E8D15-496B-07AC-E5F6-8FAE5D4C7B1A': 'Outlaw',
+      '5F0AAF7A-4289-3998-D5FF-EB9A5CF7EF5C': 'Tour de Force'
+    };
+    return weaponNames[weaponId] || 'Unknown';
+  };
+
+  const getArmorName = (armorId: string) => {
+    const armorNames: Record<string, string> = {
+      '4DEC83D5-4902-9AB3-BED6-A7A390761157': 'Light Armor',
+      'B1B9086D-41BD-A516-5D29-E3B34A6F1644': 'Heavy Armor',
+      '822BCAB2-40A2-324E-C137-E09195AD7692': 'Heavy Armor'
+    };
+    return armorNames[armorId] || '';
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className={`
+        rounded-3xl p-6 backdrop-blur-xl border transition-all duration-300
+        ${isDarkMode 
+          ? 'bg-slate-900/40 border-slate-700/50' 
+          : 'bg-white/20 border-white/30'
+        }
+      `}>
+        <h3 className={`text-xl font-bold mb-4 ${
+          isDarkMode ? 'text-white' : 'text-gray-800'
+        }`}>
+          Economy Analysis
+        </h3>
+        
+        <div className="grid gap-4">
+          {roundResults.slice(0, 5).map((round) => (
+            <div
+              key={round.roundNum}
+              className={`
+                p-4 rounded-xl backdrop-blur-sm border
+                ${isDarkMode 
+                  ? 'bg-slate-800/40 border-slate-700/50' 
+                  : 'bg-white/20 border-white/30'
+                }
+              `}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h4 className={`font-semibold ${
+                  isDarkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  Round {round.roundNum + 1}
+                </h4>
+                <div className={`text-sm ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  {round.winningTeam === myTeamId ? 'Won' : 'Lost'}
+                </div>
+              </div>
+              
+              {round.playerEconomies && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h5 className={`text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-blue-300' : 'text-blue-700'
+                    }`}>
+                      Your Team
+                    </h5>
+                    <div className="space-y-1">
+                      {round.playerEconomies
+                        .filter((eco: any) => {
+                          const player = allPlayers.find(p => p.subject === eco.subject);
+                          return player?.teamId === myTeamId;
+                        })
+                        .map((eco: any) => (
+                          <div
+                            key={eco.subject}
+                            className={`text-xs ${
+                              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                            }`}
+                          >
+                            <span className="font-medium">
+                              {getPlayerName(eco.subject).split('#')[0]}
+                            </span>
+                            : {getWeaponName(eco.weapon)} 
+                            {eco.armor && ` + ${getArmorName(eco.armor)}`}
+                            <span className="ml-2 text-green-400">
+                              ${eco.remaining}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h5 className={`text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-red-300' : 'text-red-700'
+                    }`}>
+                      Enemy Team
+                    </h5>
+                    <div className="space-y-1">
+                      {round.playerEconomies
+                        .filter((eco: any) => {
+                          const player = allPlayers.find(p => p.subject === eco.subject);
+                          return player?.teamId !== myTeamId;
+                        })
+                        .map((eco: any) => (
+                          <div
+                            key={eco.subject}
+                            className={`text-xs ${
+                              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                            }`}
+                          >
+                            <span className="font-medium">
+                              {getPlayerName(eco.subject).split('#')[0]}
+                            </span>
+                            : {getWeaponName(eco.weapon)}
+                            {eco.armor && ` + ${getArmorName(eco.armor)}`}
+                            <span className="ml-2 text-green-400">
+                              ${eco.remaining}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
