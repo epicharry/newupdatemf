@@ -165,48 +165,83 @@ export class MatchHistoryAPI {
       const matchDetails = await this.getMatchDetails(matchId);
       if (!matchDetails) return null;
 
-      // Find player's team
-      const targetPlayer = matchDetails.players.find(p => p.subject === targetPuuid);
-      if (!targetPlayer) return null;
+      // Check if this is deathmatch mode
+      const isDeathmatch = matchDetails.matchInfo.queueID === 'deathmatch';
+      
+      if (isDeathmatch) {
+        // In deathmatch, all players are in one list, no teams
+        const allPlayers = matchDetails.players.map(player => ({
+          ...player,
+          competitiveTier: player.competitiveTier || 0
+        }));
+        
+        // Find target player to determine their result
+        const targetPlayer = allPlayers.find(p => p.subject === targetPuuid);
+        if (!targetPlayer) return null;
+        
+        // In deathmatch, result is based on individual performance
+        // Find the winner (player with most kills or highest score)
+        const winner = allPlayers.reduce((prev, current) => 
+          (current.stats.kills > prev.stats.kills) ? current : prev
+        );
+        
+        const matchResult: 'victory' | 'defeat' | 'draw' = 
+          targetPlayer.subject === winner.subject ? 'victory' : 'defeat';
+        
+        return {
+          matchDetails,
+          myTeam: allPlayers, // All players in one team for deathmatch
+          enemyTeam: [], // No enemy team in deathmatch
+          myTeamId: 'deathmatch',
+          enemyTeamId: '',
+          matchResult,
+          myTeamScore: targetPlayer.stats.kills,
+          enemyTeamScore: winner.stats.kills
+        };
+      } else {
+        // Regular team-based modes
+        const targetPlayer = matchDetails.players.find(p => p.subject === targetPuuid);
+        if (!targetPlayer) return null;
 
-      const myTeamId = targetPlayer.teamId;
-      const enemyTeamId = myTeamId === 'Blue' ? 'Red' : 'Blue';
+        const myTeamId = targetPlayer.teamId;
+        const enemyTeamId = myTeamId === 'Blue' ? 'Red' : 'Blue';
 
-      // Separate teams and ensure all players have competitive tier
-      const myTeam = matchDetails.players.filter(p => p.teamId === myTeamId).map(player => ({
-        ...player,
-        competitiveTier: player.competitiveTier || 0 // Ensure tier is set for non-competitive matches
-      }));
-      const enemyTeam = matchDetails.players.filter(p => p.teamId === enemyTeamId).map(player => ({
-        ...player,
-        competitiveTier: player.competitiveTier || 0 // Ensure tier is set for non-competitive matches
-      }));
+        // Separate teams and ensure all players have competitive tier
+        const myTeam = matchDetails.players.filter(p => p.teamId === myTeamId).map(player => ({
+          ...player,
+          competitiveTier: player.competitiveTier || 0
+        }));
+        const enemyTeam = matchDetails.players.filter(p => p.teamId === enemyTeamId).map(player => ({
+          ...player,
+          competitiveTier: player.competitiveTier || 0
+        }));
 
-      // Get team scores
-      const myTeamData = matchDetails.teams.find(t => t.teamId === myTeamId);
-      const enemyTeamData = matchDetails.teams.find(t => t.teamId === enemyTeamId);
+        // Get team scores
+        const myTeamData = matchDetails.teams.find(t => t.teamId === myTeamId);
+        const enemyTeamData = matchDetails.teams.find(t => t.teamId === enemyTeamId);
 
-      const myTeamScore = myTeamData?.roundsWon || 0;
-      const enemyTeamScore = enemyTeamData?.roundsWon || 0;
+        const myTeamScore = myTeamData?.roundsWon || 0;
+        const enemyTeamScore = enemyTeamData?.roundsWon || 0;
 
-      // Determine match result
-      let matchResult: 'victory' | 'defeat' | 'draw' = 'defeat';
-      if (myTeamData?.won) {
-        matchResult = 'victory';
-      } else if (myTeamScore === enemyTeamScore) {
-        matchResult = 'draw';
+        // Determine match result
+        let matchResult: 'victory' | 'defeat' | 'draw' = 'defeat';
+        if (myTeamData?.won) {
+          matchResult = 'victory';
+        } else if (myTeamScore === enemyTeamScore) {
+          matchResult = 'draw';
+        }
+
+        return {
+          matchDetails,
+          myTeam,
+          enemyTeam,
+          myTeamId,
+          enemyTeamId,
+          matchResult,
+          myTeamScore,
+          enemyTeamScore
+        };
       }
-
-      return {
-        matchDetails,
-        myTeam,
-        enemyTeam,
-        myTeamId,
-        enemyTeamId,
-        matchResult,
-        myTeamScore,
-        enemyTeamScore
-      };
     } catch (error) {
       console.error('Failed to get match details for display:', error);
       return null;
