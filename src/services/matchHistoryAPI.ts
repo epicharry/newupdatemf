@@ -1,3 +1,36 @@
+import { ValorantTokens, MatchHistoryEntry, MatchDetails, CompetitiveUpdate, ProcessedMatch, MatchPlayer } from '../types/matchHistory';
+import { AGENTS, MAPS, QUEUE_TYPES } from '../constants/valorant';
+
+export class MatchHistoryAPI {
+  private tokens: ValorantTokens;
+  private region: string;
+  private shard: string;
+
+  constructor(tokens: ValorantTokens, region: string = 'ap', shard: string = 'ap') {
+    this.tokens = tokens;
+    this.region = region;
+    this.shard = shard;
+  }
+
+  private getHeaders() {
+    return {
+      'Authorization': `Bearer ${this.tokens.accessToken}`,
+      'X-Riot-Entitlements-JWT': this.tokens.entitlementsToken,
+      'X-Riot-ClientPlatform': 'ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9',
+      'X-Riot-ClientVersion': this.tokens.clientVersion || 'release-08.07-shipping-9-2444158',
+      'Content-Type': 'application/json'
+    };
+  }
+
+  private async makeRequestWithRetry(url: string, options: any = {}) {
+    try {
+      const headers = this.getHeaders();
+      const response = await window.electronAPI.makeRequest({
+        url,
+        headers,
+        ...options
+      });
+
 return response;
     } catch (error) {
       // If request fails, try refreshing tokens once
