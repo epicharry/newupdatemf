@@ -3,6 +3,7 @@ import { ArrowLeft, Crown, Target, Clock, Users, Moon, Sun, Activity, Bomb, Shie
 import { MatchDetails, MatchPlayer } from '../types/matchHistory';
 import { AGENTS, RANKS } from '../constants/valorant';
 import { MAPS } from '../constants/maps';
+import { WEAPONS } from '../constants/weapons';
 
 interface MatchDetailsPageProps {
   matchDetails: MatchDetails;
@@ -497,6 +498,9 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
     }
   };
 
+  const getWeaponName = (weaponId: string) => {
+    return WEAPONS[weaponId.toLowerCase()] || 'Unknown Weapon';
+  };
   return (
     <div className="space-y-4">
       {timelineData.map((round) => (
@@ -614,6 +618,13 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
                               isDarkMode ? 'text-gray-400' : 'text-gray-600'
                             }`}>
                               ({getPlayerAgent(kill.victim)})
+                            </span>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              isDarkMode 
+                                ? 'bg-slate-700/50 text-gray-300' 
+                                : 'bg-gray-200/50 text-gray-600'
+                            }`}>
+                              {getWeaponName(kill.finishingDamage.damageItem)}
                             </span>
                           </div>
                           
