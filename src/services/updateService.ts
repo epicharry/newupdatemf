@@ -34,12 +34,24 @@ export class UpdateService {
         method: 'GET',
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'Valorant-Companion-App'
+          'User-Agent': 'Valorant-Companion-App',
+          ...(import.meta.env.VITE_GITHUB_TOKEN && {
+            'Authorization': `token ${import.meta.env.VITE_GITHUB_TOKEN}`
+          })
         },
         cache: forceCheck ? 'no-cache' : 'default'
       });
 
       if (!response.ok) {
+        // Handle rate limiting gracefully
+        if (response.status === 403) {
+          console.warn('GitHub API rate limit exceeded. Using cached data or skipping update check.');
+          const fallbackStatus: UpdateStatus = {
+            hasUpdate: false,
+            currentVersion: this.CURRENT_VERSION
+          };
+          return fallbackStatus;
+        }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
