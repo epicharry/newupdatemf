@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, RefreshCw, Wifi, WifiOff, Users, Moon, Sun, Globe, History, Download, HelpCircle, MessageSquare, Clock } from 'lucide-react';
+import { Target, RefreshCw, Wifi, WifiOff, Users, Moon, Sun, Globe, History, Download, HelpCircle, MessageSquare, Clock, Sparkles, User } from 'lucide-react';
 
 interface HeaderProps {
   status: string;
@@ -58,202 +58,294 @@ export const Header: React.FC<HeaderProps> = ({
     return isDarkMode ? 'text-gray-400' : 'text-gray-700';
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   return (
-    <div className="text-center mb-8">
-      {/* Dark Mode Toggle */}
-      <div className="flex justify-end items-center space-x-3 mb-4">
-        {/* FAQ Button */}
-        {onViewFAQ && (
-          <button
-            onClick={onViewFAQ}
-            className={`
-              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
-              hover:scale-105 active:scale-95
+    <div className="mb-8">
+      {/* Top Section - Welcome and Controls */}
+      <div className="flex items-start justify-between mb-8">
+        {/* Left - Welcome Section */}
+        <div className={`
+          rounded-3xl p-6 backdrop-blur-xl border transition-all duration-500
+          ${isDarkMode 
+            ? 'bg-slate-900/40 border-slate-700/50' 
+            : 'bg-white/20 border-white/30'
+          }
+        `}>
+          <div className="flex items-center space-x-4">
+            {/* Welcome Icon with Animation */}
+            <div className={`
+              relative p-3 rounded-full backdrop-blur-sm border transition-all duration-300
               ${isDarkMode 
-                ? 'bg-slate-800/40 border-slate-700/50 text-green-400 hover:bg-slate-800/60' 
-                : 'bg-white/20 border-white/30 text-green-700 hover:bg-white/30'
+                ? 'bg-blue-500/20 border-blue-500/30' 
+                : 'bg-blue-400/20 border-blue-400/30'
               }
-            `}
-          >
-            <HelpCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">FAQ</span>
-          </button>
-        )}
-        
-        {/* Suggestions Button */}
-        {onViewSuggestions && (
-          <button
-            onClick={onViewSuggestions}
-            className={`
-              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
-              hover:scale-105 active:scale-95
-              ${isDarkMode 
-                ? 'bg-slate-800/40 border-slate-700/50 text-orange-400 hover:bg-slate-800/60' 
-                : 'bg-white/20 border-white/30 text-orange-700 hover:bg-white/30'
-              }
-            `}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span className="text-sm font-medium">Suggestions</span>
-          </button>
-        )}
-        
-        {/* Analysis Button */}
-        {showAnalysisButton && onViewAnalysis && (
-          <button
-            onClick={onViewAnalysis}
-            className={`
-              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
-              hover:scale-105 active:scale-95
-              ${isDarkMode 
-                ? 'bg-slate-800/40 border-slate-700/50 text-cyan-400 hover:bg-slate-800/60' 
-                : 'bg-white/20 border-white/30 text-cyan-700 hover:bg-white/30'
-              }
-            `}
-          >
-            <Target className="w-4 h-4" />
-            <span className="text-sm font-medium">Analysis</span>
-          </button>
-        )}
-        
-        {/* Check Updates Button */}
-        {onCheckUpdates && (
-          <button
-            onClick={onCheckUpdates}
-            className={`
-              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
-              hover:scale-105 active:scale-95
-              ${isDarkMode 
-                ? 'bg-slate-800/40 border-slate-700/50 text-purple-400 hover:bg-slate-800/60' 
-                : 'bg-white/20 border-white/30 text-purple-700 hover:bg-white/30'
-              }
-            `}
-          >
-            <Download className="w-4 h-4" />
-            <span className="text-sm font-medium">Updates</span>
-          </button>
-        )}
-        
-        {/* Match History Button */}
-        {showMatchHistoryButton && onViewMatchHistory && (
-          <button
-            onClick={onViewMatchHistory}
-            className={`
-              flex items-center space-x-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-300
-              hover:scale-105 active:scale-95
-              ${isDarkMode 
-                ? 'bg-slate-800/40 border-slate-700/50 text-blue-400 hover:bg-slate-800/60' 
-                : 'bg-white/20 border-white/30 text-blue-700 hover:bg-white/30'
-              }
-            `}
-          >
-            <History className="w-4 h-4" />
-            <span className="text-sm font-medium">Match History</span>
-          </button>
-        )}
-        
-        <button
-          onClick={onToggleDarkMode}
-          className={`
-            p-3 rounded-full backdrop-blur-sm border transition-all duration-300
-            hover:scale-110 active:scale-95
-            ${isDarkMode 
-              ? 'bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:bg-slate-800/60' 
-              : 'bg-white/20 border-white/30 text-gray-700 hover:bg-white/30'
-            }
-          `}
-        >
-          {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
-      </div>
-
-      {/* Main Status */}
-      <div className="flex items-center justify-center space-x-3 mb-4">
-        {getStatusIcon()}
-        <h1 className={`text-3xl font-bold ${getStatusColor()}`}>
-          {status}
-        </h1>
-        {isLoading && (
-          <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
-        )}
-      </div>
-
-      {/* Side Info */}
-      {side && (
-        <div className={`text-lg font-medium mb-4 ${
-          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-        }`}>
-          {side}
-        </div>
-      )}
-
-      {/* Connection Status */}
-      <div className="flex items-center justify-center space-x-6 text-sm mb-6">
-        <div className={`flex items-center space-x-2 ${
-          isConnected ? 'text-green-500' : 'text-red-500'
-        }`}>
-          {isConnected ? (
-            <Wifi className="w-4 h-4" />
-          ) : (
-            <WifiOff className="w-4 h-4" />
-          )}
-          <span>
-            {isConnected ? 'Ready' : 'Disconnected'}
-          </span>
-        </div>
-        
-        {currentRegion && isConnected && (
-          <div className={`flex items-center space-x-2 ${
-            isDarkMode ? 'text-blue-400' : 'text-blue-600'
-          }`}>
-            <Globe className="w-4 h-4" />
-            <span>Region: {currentRegion.toUpperCase()}</span>
-          </div>
-        )}
-        
-        {playerCount > 0 && (
-          <div className={`flex items-center space-x-2 ${
-            isDarkMode ? 'text-gray-400' : 'text-gray-600'
-          }`}>
-            <Users className="w-4 h-4" />
-            <span>{playerCount} players</span>
-          </div>
-        )}
-      </div>
-
-      {/* Manual Refresh Button */}
-      {matchDetected && (
-        <button
-          onClick={onRefresh}
-          disabled={isLoading || refreshCooldown > 0}
-          className={`
-            px-6 py-3 rounded-xl font-medium transition-all duration-300
-            backdrop-blur-sm border hover:scale-105 active:scale-95
-            disabled:scale-100 disabled:cursor-not-allowed
-            ${isDarkMode 
-              ? 'bg-blue-600/20 border-blue-500/30 text-blue-400 hover:bg-blue-600/30 disabled:bg-blue-800/20 disabled:text-blue-600' 
-              : 'bg-blue-500/20 border-blue-400/30 text-blue-700 hover:bg-blue-500/30 disabled:bg-blue-400/20 disabled:text-blue-600'
-            }
-          `}
-        >
-          {refreshCooldown > 0 ? (
-            <div className="flex items-center space-x-2">
-              <Clock className="w-4 h-4" />
-              <span>Wait {refreshCooldown}s</span>
+            `}>
+              <User className="w-8 h-8 text-blue-500" />
+              {/* Sparkle animation */}
+              <div className="absolute -top-1 -right-1">
+                <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
+              </div>
             </div>
-          ) : isLoading ? (
-            <div className="flex items-center space-x-2">
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>Refreshing...</span>
+            
+            {/* Welcome Text */}
+            <div>
+              <h2 className={`text-2xl font-bold mb-1 ${
+                isDarkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                {getGreeting()}!
+              </h2>
+              <p className={`text-lg ${
+                isDarkMode ? 'text-blue-300' : 'text-blue-700'
+              }`}>
+                Welcome to ValRadiant
+              </p>
+              <p className={`text-sm ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Your Valorant companion app
+              </p>
             </div>
-          ) : (
+          </div>
+        </div>
+
+        {/* Right - Button Groups */}
+        <div className="flex flex-col space-y-4">
+          {/* App Controls Group */}
+          <div className={`
+            rounded-2xl p-4 backdrop-blur-xl border transition-all duration-300
+            ${isDarkMode 
+              ? 'bg-slate-900/30 border-slate-700/50' 
+              : 'bg-white/15 border-white/25'
+            }
+          `}>
+            <div className={`text-xs font-medium mb-3 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              APP CONTROLS
+            </div>
             <div className="flex items-center space-x-2">
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh Match</span>
+              {/* FAQ Button */}
+              {onViewFAQ && (
+                <button
+                  onClick={onViewFAQ}
+                  className={`
+                    flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                    hover:scale-105 active:scale-95 text-sm font-medium
+                    ${isDarkMode 
+                      ? 'bg-slate-800/40 border-slate-700/50 text-green-400 hover:bg-slate-800/60' 
+                      : 'bg-white/20 border-white/30 text-green-700 hover:bg-white/30'
+                    }
+                  `}
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  <span>FAQ</span>
+                </button>
+              )}
+              
+              {/* Suggestions Button */}
+              {onViewSuggestions && (
+                <button
+                  onClick={onViewSuggestions}
+                  className={`
+                    flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                    hover:scale-105 active:scale-95 text-sm font-medium
+                    ${isDarkMode 
+                      ? 'bg-slate-800/40 border-slate-700/50 text-orange-400 hover:bg-slate-800/60' 
+                      : 'bg-white/20 border-white/30 text-orange-700 hover:bg-white/30'
+                    }
+                  `}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Suggestions</span>
+                </button>
+              )}
+              
+              {/* Check Updates Button */}
+              {onCheckUpdates && (
+                <button
+                  onClick={onCheckUpdates}
+                  className={`
+                    flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                    hover:scale-105 active:scale-95 text-sm font-medium
+                    ${isDarkMode 
+                      ? 'bg-slate-800/40 border-slate-700/50 text-purple-400 hover:bg-slate-800/60' 
+                      : 'bg-white/20 border-white/30 text-purple-700 hover:bg-white/30'
+                    }
+                  `}
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Updates</span>
+                </button>
+              )}
+              
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={onToggleDarkMode}
+                className={`
+                  p-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                  hover:scale-110 active:scale-95
+                  ${isDarkMode 
+                    ? 'bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:bg-slate-800/60' 
+                    : 'bg-white/20 border-white/30 text-gray-700 hover:bg-white/30'
+                  }
+                `}
+              >
+                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Match Features Group */}
+          {(showMatchHistoryButton || showAnalysisButton) && (
+            <div className={`
+              rounded-2xl p-4 backdrop-blur-xl border transition-all duration-300
+              ${isDarkMode 
+                ? 'bg-slate-900/30 border-slate-700/50' 
+                : 'bg-white/15 border-white/25'
+              }
+            `}>
+              <div className={`text-xs font-medium mb-3 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                MATCH FEATURES
+              </div>
+              <div className="flex items-center space-x-2">
+                {/* Match History Button */}
+                {showMatchHistoryButton && onViewMatchHistory && (
+                  <button
+                    onClick={onViewMatchHistory}
+                    className={`
+                      flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                      hover:scale-105 active:scale-95 text-sm font-medium
+                      ${isDarkMode 
+                        ? 'bg-slate-800/40 border-slate-700/50 text-blue-400 hover:bg-slate-800/60' 
+                        : 'bg-white/20 border-white/30 text-blue-700 hover:bg-white/30'
+                      }
+                    `}
+                  >
+                    <History className="w-4 h-4" />
+                    <span>Match History</span>
+                  </button>
+                )}
+                
+                {/* Analysis Button */}
+                {showAnalysisButton && onViewAnalysis && (
+                  <button
+                    onClick={onViewAnalysis}
+                    className={`
+                      flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                      hover:scale-105 active:scale-95 text-sm font-medium
+                      ${isDarkMode 
+                        ? 'bg-slate-800/40 border-slate-700/50 text-cyan-400 hover:bg-slate-800/60' 
+                        : 'bg-white/20 border-white/30 text-cyan-700 hover:bg-white/30'
+                      }
+                    `}
+                  >
+                    <Target className="w-4 h-4" />
+                    <span>Analysis</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
-        </button>
-      )}
+        </div>
+      </div>
+
+      {/* Main Status Section */}
+      <div className="text-center mb-6">
+        <div className="flex items-center justify-center space-x-3 mb-4">
+          {getStatusIcon()}
+          <h1 className={`text-3xl font-bold ${getStatusColor()}`}>
+            {status}
+          </h1>
+          {isLoading && (
+            <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
+          )}
+        </div>
+
+        {/* Side Info */}
+        {side && (
+          <div className={`text-lg font-medium mb-4 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            {side}
+          </div>
+        )}
+
+        {/* Connection Status */}
+        <div className="flex items-center justify-center space-x-6 text-sm mb-6">
+          <div className={`flex items-center space-x-2 ${
+            isConnected ? 'text-green-500' : 'text-red-500'
+          }`}>
+            {isConnected ? (
+              <Wifi className="w-4 h-4" />
+            ) : (
+              <WifiOff className="w-4 h-4" />
+            )}
+            <span>
+              {isConnected ? 'Ready' : 'Disconnected'}
+            </span>
+          </div>
+          
+          {currentRegion && isConnected && (
+            <div className={`flex items-center space-x-2 ${
+              isDarkMode ? 'text-blue-400' : 'text-blue-600'
+            }`}>
+              <Globe className="w-4 h-4" />
+              <span>Region: {currentRegion.toUpperCase()}</span>
+            </div>
+          )}
+          
+          {playerCount > 0 && (
+            <div className={`flex items-center space-x-2 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              <Users className="w-4 h-4" />
+              <span>{playerCount} players</span>
+            </div>
+          )}
+        </div>
+
+        {/* Manual Refresh Button */}
+        {matchDetected && (
+          <button
+            onClick={onRefresh}
+            disabled={isLoading || refreshCooldown > 0}
+            className={`
+              px-6 py-3 rounded-xl font-medium transition-all duration-300
+              backdrop-blur-sm border hover:scale-105 active:scale-95
+              disabled:scale-100 disabled:cursor-not-allowed
+              ${isDarkMode 
+                ? 'bg-blue-600/20 border-blue-500/30 text-blue-400 hover:bg-blue-600/30 disabled:bg-blue-800/20 disabled:text-blue-600' 
+                : 'bg-blue-500/20 border-blue-400/30 text-blue-700 hover:bg-blue-500/30 disabled:bg-blue-400/20 disabled:text-blue-600'
+              }
+            `}
+          >
+            {refreshCooldown > 0 ? (
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4" />
+                <span>Wait {refreshCooldown}s</span>
+              </div>
+            ) : isLoading ? (
+              <div className="flex items-center space-x-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Refreshing...</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh Match</span>
+              </div>
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 };
