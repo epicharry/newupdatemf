@@ -619,13 +619,23 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
                             }`}>
                               ({getPlayerAgent(kill.victim)})
                             </span>
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              isDarkMode 
-                                ? 'bg-slate-700/50 text-gray-300' 
-                                : 'bg-gray-200/50 text-gray-600'
-                            }`}>
-                              {getWeaponName(kill.finishingDamage.damageItem)}
-                            </span>
+                            {kill.finishingDamage.damageType === 'Melee' ? (
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                isDarkMode 
+                                  ? 'bg-red-600/20 border border-red-500/30 text-red-400' 
+                                  : 'bg-red-500/15 border border-red-400/30 text-red-700'
+                              }`}>
+                                🔪 KNIFE KILL
+                              </span>
+                            ) : (
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                isDarkMode 
+                                  ? 'bg-slate-700/50 text-gray-300' 
+                                  : 'bg-gray-200/50 text-gray-600'
+                              }`}>
+                                {getWeaponName(kill.finishingDamage.damageItem)}
+                              </span>
+                            )}
                           </div>
                           
                           {kill.assistants.length > 0 && (
