@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, RefreshCw, Wifi, WifiOff, Users, Moon, Sun, Globe, History, Download, HelpCircle, MessageSquare, Clock, Sparkles, User } from 'lucide-react';
+import { Target, RefreshCw, Wifi, WifiOff, Users, Moon, Sun, Globe, History, Download, HelpCircle, MessageSquare, Clock, Sparkles, User, Palette } from 'lucide-react';
 
 interface HeaderProps {
   status: string;
@@ -11,6 +11,7 @@ interface HeaderProps {
   onRefresh: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
+  onOpenThemeSelector?: () => void;
   currentRegion?: string;
   onViewMatchHistory?: () => void;
   showMatchHistoryButton?: boolean;
@@ -32,6 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   onRefresh,
   isDarkMode,
   onToggleDarkMode,
+  onOpenThemeSelector,
   currentRegion,
   onViewMatchHistory,
   showMatchHistoryButton = false,
@@ -185,19 +187,35 @@ export const Header: React.FC<HeaderProps> = ({
               )}
               
               {/* Dark Mode Toggle */}
-              <button
-                onClick={onToggleDarkMode}
-                className={`
-                  p-2 rounded-xl backdrop-blur-sm border transition-all duration-300
-                  hover:scale-110 active:scale-95
-                  ${isDarkMode 
-                    ? 'bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:bg-slate-800/60' 
-                    : 'bg-white/20 border-white/30 text-gray-700 hover:bg-white/30'
-                  }
-                `}
-              >
-                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
+              {onOpenThemeSelector ? (
+                <button
+                  onClick={onOpenThemeSelector}
+                  className={`
+                    p-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                    hover:scale-110 active:scale-95
+                    ${isDarkMode 
+                      ? 'bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:bg-slate-800/60' 
+                      : 'bg-white/20 border-white/30 text-gray-700 hover:bg-white/30'
+                    }
+                  `}
+                >
+                  <Palette className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={onToggleDarkMode}
+                  className={`
+                    p-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                    hover:scale-110 active:scale-95
+                    ${isDarkMode 
+                      ? 'bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:bg-slate-800/60' 
+                      : 'bg-white/20 border-white/30 text-gray-700 hover:bg-white/30'
+                    }
+                  `}
+                >
+                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+              )}
             </div>
           </div>
 
