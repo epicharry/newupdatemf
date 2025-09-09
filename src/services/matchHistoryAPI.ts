@@ -1,43 +1,4 @@
-import { ValorantTokens, PlayerInfo } from '../types/valorant';
-import { MatchHistoryEntry, MatchDetails, ProcessedMatch, CompetitiveUpdate } from '../types/matchHistory';
-import { CLIENT_PLATFORM, CLIENT_VERSION, DEFAULT_REGION, DEFAULT_SHARD, AGENTS, RANKS } from '../constants/valorant';
-import { MAPS, QUEUE_TYPES } from '../constants/maps';
-
-export class MatchHistoryAPI {
-  private tokens: ValorantTokens | null = null;
-  private region: string = DEFAULT_REGION;
-  private shard: string = DEFAULT_SHARD;
-
-  constructor(tokens: ValorantTokens, region?: string, shard?: string) {
-    this.tokens = tokens;
-    if (region) this.region = region;
-    if (shard) this.shard = shard;
-  }
-
-  private getHeaders(): Record<string, string> {
-    if (!this.tokens) {
-      throw new Error('Tokens not available');
-    }
-    
-    return {
-      "Authorization": `Bearer ${this.tokens.authToken}`,
-      "X-Riot-Entitlements-JWT": this.tokens.entToken,
-      "X-Riot-ClientPlatform": CLIENT_PLATFORM,
-      "X-Riot-ClientVersion": CLIENT_VERSION,
-      "Content-Type": "application/json"
-    };
-  }
-
-  private async makeRequestWithRetry(url: string, options: any = {}): Promise<any> {
-    try {
-      const headers = this.getHeaders();
-      const response = await window.electronAPI.makeRequest({
-        url,
-        headers,
-        ...options
-      });
-      
-      return response;
+return response;
     } catch (error) {
       // If request fails, try refreshing tokens once
       console.warn('Match history request failed, attempting token refresh:', error);
