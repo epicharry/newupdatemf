@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Crown, Clock, Target, Filter, ExternalLink, Moon, Sun, Loader2 } from 'lucide-react';
+import { ArrowLeft, Crown, Clock, Target, Filter, ExternalLink, Moon, Sun } from 'lucide-react';
 import { PlayerInfo } from '../types/valorant';
 import { ProcessedMatch } from '../types/matchHistory';
 import { getProcessedMatchHistory, getProcessedCompetitiveHistory } from '../services/matchHistoryAPI';
@@ -22,6 +22,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [showCompetitiveOnly, setShowCompetitiveOnly] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<any>(null);
 
   useEffect(() => {
     loadMatchHistory();
@@ -82,6 +83,42 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
     const seconds = Math.floor((lengthMs % (1000 * 60)) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
+
+  const handleMatchClick = async (match: ProcessedMatch) => {
+    try {
+      // Dynamically import the function to avoid loading it until needed
+      const { getMatchDetailsForDisplay } = await import('../services/matchHistoryAPI');
+      const matchDetails = await getMatchDetailsForDisplay(match.matchId, player.puuid);
+      if (matchDetails) {
+        setSelectedMatch(matchDetails);
+      }
+    } catch (error) {
+      console.error('Failed to load match details:', error);
+    }
+  };
+
+  const handleBackFromMatch = () => {
+    setSelectedMatch(null);
+  };
+
+  // Show match details if a match is selected
+  if (selectedMatch) {
+    return (
+      <MatchDetailsPage
+        matchDetails={selectedMatch.matchDetails}
+        myTeam={selectedMatch.myTeam}
+        enemyTeam={selectedMatch.enemyTeam}
+        myTeamId={selectedMatch.myTeamId}
+        enemyTeamId={selectedMatch.enemyTeamId}
+        matchResult={selectedMatch.matchResult}
+        myTeamScore={selectedMatch.myTeamScore}
+        enemyTeamScore={selectedMatch.enemyTeamScore}
+        onBack={handleBackFromMatch}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={onToggleDarkMode}
+      />
+    );
+  }
 
   return (
     <div
@@ -337,16 +374,104 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
             </div>
           ) : (
             matches.map((match) => (
-              <MatchCard
+              <div
                 key={match.matchId}
-                match={match}
-                isDarkMode={isDarkMode}
-                formatGameTime={formatGameTime}
-                formatGameLength={formatGameLength}
-                player={player}
-                isDarkMode={isDarkMode}
-                onToggleDarkMode={onToggleDarkMode}
-              />
+                className={`
+                  rounded-2xl p-6 backdrop-blur-xl border transition-all duration-300
+                  hover:scale-[1.02] hover:shadow-xl cursor-pointer
+                  ${getResultBackgroundColor(match.matchResult, isDarkMode)}
+                `}
+                onClick={() => handleMatchClick(match)}
+              >
+                <div className="flex items-center justify-between">
+                  {/* Left: Agent + KDA */}
+                  <div className="flex items-center space-x-4">
+                    {/* Agent Icon */}
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/20">
+                        <img
+                          src={match.playerStats.agentImage}
+                          alt={match.playerStats.agent}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = `https://via.placeholder.com/64x64?text=${match.playerStats.agent[0]}`;
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Match Info */}
+                    <div>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className={`font-bold text-lg ${getResultTextColor(match.matchResult)}`}>
+                          {getResultText(match.matchResult)}
+                        </span>
+                        <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>
+                          {match.queueType}
+                        </span>
+                        {match.isTeamMVP && (
+                          <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30">
+                            <Crown className="w-3 h-3 text-yellow-400" />
+                            <span className="text-xs text-yellow-400 font-medium">MVP</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* KDA */}
+                      <div className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                        {match.playerStats.kda}
+                      </div>
+
+                      {/* Additional Info */}
+                      <div className={`text-sm mt-2 flex items-center space-x-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{formatGameTime(match.gameStartTime)}</span>
+                        </div>
+                        {match.rrChange !== undefined && match.isRanked && (
+                          <div
+                            className={`flex items-center space-x-1 font-semibold ${
+                              match.rrChange > 0 ? 'text-green-400' : match.rrChange < 0 ? 'text-red-400' : 'text-gray-400'
+                            }`}
+                          >
+                            <span>{match.rrChange > 0 ? '+' : ''}{match.rrChange} RR</span>
+                          </div>
+                        )}
+                        <span>{formatGameLength(match.gameLength)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Center: Score - Fixed positioning */}
+                  <div className="flex flex-col items-center justify-center min-w-[120px]">
+                    <div className={`text-2xl font-bold mb-1 ${getResultTextColor(match.matchResult)}`}>
+                      {match.scoreDisplay}
+                    </div>
+                    <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {formatGameLength(match.gameLength)}
+                    </div>
+                  </div>
+
+                  {/* Right: Map */}
+                  <div className="text-right min-w-[120px]">
+                    <div className="w-36 h-24 rounded-lg overflow-hidden mb-2 ring-2 ring-white/20">
+                      <img
+                        src={match.mapImage}
+                        alt={match.mapName}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://via.placeholder.com/144x96?text=Map';
+                        }}
+                      />
+                    </div>
+                    <div className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-medium`}>
+                      {match.mapName}
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))
           )}
         </div>
@@ -355,192 +480,30 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
   );
 };
 
-interface MatchCardProps {
-  match: ProcessedMatch;
-  isDarkMode: boolean;
-  formatGameTime: (timestamp: number) => string;
-  formatGameLength: (lengthMs: number) => string;
-  player: PlayerInfo;
-  onToggleDarkMode: () => void;
-}
-
-const MatchCard: React.FC<MatchCardProps> = ({
-  match,
-  isDarkMode,
-  formatGameTime,
-  formatGameLength,
-  player,
-  onToggleDarkMode
-}) => {
-  const [selectedMatch, setSelectedMatch] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleMatchClick = async () => {
-    try {
-      setIsLoading(true);
-      // Dynamically import the function to avoid loading it until needed
-      const { getMatchDetailsForDisplay } = await import('../services/matchHistoryAPI');
-      const matchDetails = await getMatchDetailsForDisplay(match.matchId, player.puuid);
-      if (matchDetails) {
-        setSelectedMatch(matchDetails);
-      }
-    } catch (error) {
-      console.error('Failed to load match details:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleBackFromMatch = () => {
-    setSelectedMatch(null);
-  };
-
-  // Show match details if a match is selected
-  if (selectedMatch) {
-    return (
-      <MatchDetailsPage
-        matchDetails={selectedMatch.matchDetails}
-        myTeam={selectedMatch.myTeam}
-        enemyTeam={selectedMatch.enemyTeam}
-        myTeamId={selectedMatch.myTeamId}
-        enemyTeamId={selectedMatch.enemyTeamId}
-        matchResult={selectedMatch.matchResult}
-        myTeamScore={selectedMatch.myTeamScore}
-        enemyTeamScore={selectedMatch.enemyTeamScore}
-        onBack={handleBackFromMatch}
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={onToggleDarkMode}
-      />
-    );
-  }
-
-  const getResultBackgroundColor = () => {
-    if (match.matchResult === 'victory') {
-      return isDarkMode 
-        ? 'bg-green-600/20 border-green-500/30 shadow-green-500/20' 
-        : 'bg-green-500/15 border-green-400/30 shadow-green-400/20';
-    } else if (match.matchResult === 'defeat') {
-      return isDarkMode 
-        ? 'bg-red-600/20 border-red-500/30 shadow-red-500/20' 
-        : 'bg-red-500/15 border-red-400/30 shadow-red-400/20';
-    }
+// Helper functions
+const getResultBackgroundColor = (matchResult: string, isDarkMode: boolean) => {
+  if (matchResult === 'victory') {
     return isDarkMode 
-      ? 'bg-yellow-500/20 border-yellow-500/30 shadow-yellow-500/20' 
-      : 'bg-yellow-400/15 border-yellow-400/30 shadow-yellow-400/20';
-  };
+      ? 'bg-green-600/20 border-green-500/30 shadow-green-500/20' 
+      : 'bg-green-500/15 border-green-400/30 shadow-green-400/20';
+  } else if (matchResult === 'defeat') {
+    return isDarkMode 
+      ? 'bg-red-600/20 border-red-500/30 shadow-red-500/20' 
+      : 'bg-red-500/15 border-red-400/30 shadow-red-400/20';
+  }
+  return isDarkMode 
+    ? 'bg-yellow-500/20 border-yellow-500/30 shadow-yellow-500/20' 
+    : 'bg-yellow-400/15 border-yellow-400/30 shadow-yellow-400/20';
+};
 
-  const getResultText = () => {
-    if (match.matchResult === 'victory') return 'VICTORY';
-    if (match.matchResult === 'defeat') return 'DEFEAT';
-    return 'DRAW';
-  };
+const getResultText = (matchResult: string) => {
+  if (matchResult === 'victory') return 'VICTORY';
+  if (matchResult === 'defeat') return 'DEFEAT';
+  return 'DRAW';
+};
 
-  const getResultTextColor = () => {
-    if (match.matchResult === 'victory') return 'text-green-400';
-    if (match.matchResult === 'defeat') return 'text-red-400';
-    return 'text-yellow-400';
-  };
-
-  return (
-    <div
-      className={`
-        rounded-2xl p-6 backdrop-blur-xl border transition-all duration-300
-        hover:scale-[1.02] hover:shadow-xl cursor-pointer relative
-        ${getResultBackgroundColor()}
-        ${isLoading ? 'pointer-events-none' : ''}
-      `}
-      onClick={handleMatchClick}
-    >
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
-          <div className="flex items-center space-x-2 text-white">
-            <Loader2 className="w-6 h-6 animate-spin" />
-            <span className="font-medium">Loading details...</span>
-          </div>
-        </div>
-      )}
-      
-      <div className="flex items-center justify-between">
-        {/* Left: Agent + KDA */}
-        <div className="flex items-center space-x-4">
-          {/* Agent Icon */}
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/20">
-              <img
-                src={match.playerStats.agentImage}
-                alt={match.playerStats.agent}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://via.placeholder.com/64x64?text=${match.playerStats.agent[0]}`;
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Match Info */}
-          <div>
-            <div className="flex items-center space-x-3 mb-2">
-              <span className={`font-bold text-lg ${getResultTextColor()}`}>{getResultText()}</span>
-              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>{match.queueType}</span>
-              {match.isTeamMVP && (
-                <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30">
-                  <Crown className="w-3 h-3 text-yellow-400" />
-                  <span className="text-xs text-yellow-400 font-medium">MVP</span>
-                </div>
-              )}
-            </div>
-
-            {/* KDA */}
-            <div className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
-              {match.playerStats.kda}
-            </div>
-
-            {/* Additional Info */}
-            <div className={`text-sm mt-2 flex items-center space-x-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              <div className="flex items-center space-x-1">
-                <Clock className="w-3 h-3" />
-                <span>{formatGameTime(match.gameStartTime)}</span>
-              </div>
-              {match.rrChange !== undefined && match.isRanked && (
-                <div
-                  className={`flex items-center space-x-1 font-semibold ${
-                    match.rrChange > 0 ? 'text-green-400' : match.rrChange < 0 ? 'text-red-400' : 'text-gray-400'
-                  }`}
-                >
-                  <span>{match.rrChange > 0 ? '+' : ''}{match.rrChange} RR</span>
-                </div>
-              )}
-              <span>{formatGameLength(match.gameLength)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Center: Score - Fixed positioning */}
-        <div className="flex flex-col items-center justify-center min-w-[120px]">
-          <div className={`text-2xl font-bold mb-1 ${getResultTextColor()}`}>{match.scoreDisplay}</div>
-          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            {formatGameLength(match.gameLength)}
-          </div>
-        </div>
-
-        {/* Right: Map */}
-        <div className="text-right min-w-[120px]">
-          <div className="w-36 h-24 rounded-lg overflow-hidden mb-2 ring-2 ring-white/20">
-            <img
-              src={match.mapImage}
-              alt={match.mapName}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = 'https://via.placeholder.com/144x96?text=Map';
-              }}
-            />
-          </div>
-          <div className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-medium`}>{match.mapName}</div>
-        </div>
-      </div>
-    </div>
-  );
+const getResultTextColor = (matchResult: string) => {
+  if (matchResult === 'victory') return 'text-green-400';
+  if (matchResult === 'defeat') return 'text-red-400';
+  return 'text-yellow-400';
 };

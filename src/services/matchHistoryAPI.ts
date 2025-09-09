@@ -116,33 +116,17 @@ export class MatchHistoryAPI {
       const processedMatches: ProcessedMatch[] = [];
 
       for (const historyEntry of history) {
-        // Only create basic match info without fetching full details
-        const basicMatch: ProcessedMatch = {
-          matchId: historyEntry.MatchID,
-          gameStartTime: historyEntry.gameStartMillis,
-          mapName: 'Loading...',
-          mapImage: 'https://via.placeholder.com/300x200?text=Loading',
-          queueType: historyEntry.queueID || 'Unknown',
-          isRanked: historyEntry.queueID === 'competitive',
-          playerStats: {
-            kills: 0,
-            deaths: 0,
-            assists: 0,
-            score: 0,
-            agent: 'Loading...',
-            agentImage: 'https://via.placeholder.com/64x64?text=?',
-            kda: '? / ? / ?'
-          },
-          matchResult: 'defeat',
-          teamScore: 0,
-          enemyScore: 0,
-          scoreDisplay: '? – ?',
-          isTeamMVP: false,
-          competitiveTier: 0,
-          gameLength: 0,
-          rrChange: undefined
-        };
-        processedMatches.push(basicMatch);
+        // Get full match details for each match
+        const matchDetails = await this.getMatchDetails(historyEntry.MatchID);
+        if (matchDetails) {
+          const competitiveUpdates = await this.getCompetitiveUpdates(puuid);
+          const competitiveUpdate = competitiveUpdates.find(update => update.MatchID === historyEntry.MatchID);
+          
+          const processedMatch = this.processMatchData(matchDetails, puuid, competitiveUpdate);
+          if (processedMatch) {
+            processedMatches.push(processedMatch);
+          }
+        }
       }
 
       return processedMatches.sort((a, b) => b.gameStartTime - a.gameStartTime);
