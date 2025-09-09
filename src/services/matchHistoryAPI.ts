@@ -1,29 +1,34 @@
-import { ValorantTokens, MatchHistoryEntry, MatchDetails, CompetitiveUpdate, ProcessedMatch, MatchPlayer } from '../types/matchHistory';
-import { AGENTS, QUEUE_TYPES } from '../constants/valorant';
-import { MAPS } from '../constants/maps';
+import { ValorantTokens, PlayerInfo } from '../types/valorant';
+import { MatchHistoryEntry, MatchDetails, ProcessedMatch, CompetitiveUpdate } from '../types/matchHistory';
+import { CLIENT_PLATFORM, CLIENT_VERSION, DEFAULT_REGION, DEFAULT_SHARD, AGENTS, RANKS } from '../constants/valorant';
+import { MAPS, QUEUE_TYPES } from '../constants/maps';
 
 export class MatchHistoryAPI {
-  private tokens: ValorantTokens;
-  private region: string;
-  private shard: string;
+  private tokens: ValorantTokens | null = null;
+  private region: string = DEFAULT_REGION;
+  private shard: string = DEFAULT_SHARD;
 
-  constructor(tokens: ValorantTokens, region: string = 'ap', shard: string = 'ap') {
+  constructor(tokens: ValorantTokens, region?: string, shard?: string) {
     this.tokens = tokens;
-    this.region = region;
-    this.shard = shard;
+    if (region) this.region = region;
+    if (shard) this.shard = shard;
   }
 
-  private getHeaders() {
+  private getHeaders(): Record<string, string> {
+    if (!this.tokens) {
+      throw new Error('Tokens not available');
+    }
+    
     return {
-      'Authorization': `Bearer ${this.tokens.accessToken}`,
-      'X-Riot-Entitlements-JWT': this.tokens.entitlementsToken,
-      'X-Riot-ClientPlatform': 'ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9',
-      'X-Riot-ClientVersion': this.tokens.clientVersion || 'release-08.07-shipping-9-2444158',
-      'Content-Type': 'application/json'
+      "Authorization": `Bearer ${this.tokens.authToken}`,
+      "X-Riot-Entitlements-JWT": this.tokens.entToken,
+      "X-Riot-ClientPlatform": CLIENT_PLATFORM,
+      "X-Riot-ClientVersion": CLIENT_VERSION,
+      "Content-Type": "application/json"
     };
   }
 
-  private async makeRequestWithRetry(url: string, options: any = {}) {
+  private async makeRequestWithRetry(url: string, options: any = {}): Promise<any> {
     try {
       const headers = this.getHeaders();
       const response = await window.electronAPI.makeRequest({
@@ -31,8 +36,8 @@ export class MatchHistoryAPI {
         headers,
         ...options
       });
-
-return response;
+      
+      return response;
     } catch (error) {
       // If request fails, try refreshing tokens once
       console.warn('Match history request failed, attempting token refresh:', error);
