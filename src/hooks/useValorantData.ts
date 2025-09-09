@@ -16,6 +16,7 @@ export const useValorantData = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [matchDetected, setMatchDetected] = useState(false);
   const [databaseConnected, setDatabaseConnected] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState(0);
   
   const apiRef = useRef<ValorantAPI>(new ValorantAPI());
 
@@ -91,15 +92,31 @@ export const useValorantData = () => {
   useEffect(() => {
     updateData();
     
-    // Only auto-refresh if no match is detected
+    // Only auto-refresh if no match is detected and not in cooldown
     const interval = setInterval(() => {
-      if (!matchDetected) {
+      const now = Date.now();
+      const timeSinceLastRefresh = now - lastRefreshTime;
+      
+      if (!matchDetected && timeSinceLastRefresh >= 5000) {
         updateData();
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [matchDetected]);
+  }, [matchDetected, lastRefreshTime]);
+
+  const manualRefresh = () => {
+    const now = Date.now();
+    const timeSinceLastRefresh = now - lastRefreshTime;
+    
+    // Enforce 10-second cooldown for manual refresh when match is detected
+    if (matchDetected && timeSinceLastRefresh < 10000) {
+      return;
+    }
+    
+    setLastRefreshTime(now);
+    updateData();
+  };
 
   const getStatus = () => {
     if (error) return `Error: ${error}`;
@@ -120,7 +137,7 @@ export const useValorantData = () => {
     isConnected,
     matchDetected,
     totalPlayers: matchData.players.length,
-    refresh: updateData,
+    refresh: manualRefresh,
     currentRegion: apiRef.current.getCurrentRegion()
   };
 };
