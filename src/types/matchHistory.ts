@@ -53,6 +53,40 @@ export interface RoundResult {
   roundResult: string;
   roundCeremony: string;
   winningTeam: string;
+  winningTeamRole?: string;
+  bombPlanter?: string;
+  bombDefuser?: string;
+  plantRoundTime?: number;
+  defuseRoundTime?: number;
+  plantSite?: string;
+  roundResultCode?: string;
+}
+
+export interface Kill {
+  gameTime: number;
+  roundTime: number;
+  round: number;
+  killer: string;
+  victim: string;
+  victimLocation: { x: number; y: number };
+  assistants: string[];
+  finishingDamage: {
+    damageType: string;
+    damageItem: string;
+    isSecondaryFireMode: boolean;
+  };
+}
+
+export interface RoundStats {
+  roundNum: number;
+  result: string;
+  winningTeam: string;
+  winningTeamRole?: string;
+  bombPlanted: boolean;
+  bombDefused: boolean;
+  plantSite?: string;
+  kills: Kill[];
+  duration: number;
 }
 
 export interface ProcessedMatch {

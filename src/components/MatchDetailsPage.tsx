@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowLeft, Crown, Target, Clock, Users, Moon, Sun } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Crown, Target, Clock, Users, Moon, Sun, Activity, Bomb, Shield, Zap, Skull } from 'lucide-react';
 import { MatchDetails, MatchPlayer } from '../types/matchHistory';
 import { AGENTS, RANKS } from '../constants/valorant';
 import { MAPS } from '../constants/maps';
@@ -31,6 +31,8 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
   isDarkMode,
   onToggleDarkMode,
 }) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'economy'>('overview');
+  
   const mapInfo = MAPS[matchDetails.matchInfo.mapId] || { 
     name: 'Unknown Map', 
     image: 'https://via.placeholder.com/300x200?text=Unknown+Map' 
@@ -74,6 +76,28 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
     if (tier <= 26) return 'text-[#C03B3B]'; // Immortal
     return 'text-[#FADC45]'; // Radiant
   };
+
+  const processTimelineData = () => {
+    if (!matchDetails.roundResults || !matchDetails.kills) return [];
+    
+    return matchDetails.roundResults.map((round, index) => {
+      const roundKills = matchDetails.kills?.filter(kill => kill.round === round.roundNum) || [];
+      
+      return {
+        roundNum: round.roundNum,
+        result: round.roundResult,
+        winningTeam: round.winningTeam,
+        winningTeamRole: round.winningTeamRole,
+        bombPlanted: !!round.bombPlanter,
+        bombDefused: !!round.bombDefuser,
+        plantSite: round.plantSite,
+        kills: roundKills,
+        duration: roundKills.length > 0 ? Math.max(...roundKills.map(k => k.roundTime)) : 0
+      };
+    });
+  };
+
+  const timelineData = processTimelineData();
 
   return (
     <div className={`min-h-screen transition-all duration-500 ${
@@ -188,28 +212,74 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Tab Navigation */}
+          <div className="flex space-x-2 mb-6">
+            {[
+              { id: 'overview', label: 'Overview', icon: Users },
+              { id: 'timeline', label: 'Timeline', icon: Activity },
+              { id: 'economy', label: 'Economy', icon: Target }
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as any)}
+                className={`
+                  flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all duration-300
+                  backdrop-blur-sm border hover:scale-105 active:scale-95
+                  ${activeTab === id
+                    ? isDarkMode
+                      ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
+                      : 'bg-blue-500/30 border-blue-400/50 text-blue-700'
+                    : isDarkMode
+                      ? 'bg-slate-800/40 border-slate-700/50 text-gray-300 hover:bg-slate-800/60'
+                      : 'bg-white/20 border-white/30 text-gray-700 hover:bg-white/30'
+                  }
+                `}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Teams */}
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* My Team */}
-          <TeamDetailsSection
-            title={`Your Team (${myTeamId})`}
-            players={myTeam}
-            isMyTeam={true}
-            isDarkMode={isDarkMode}
-            getRankColor={getRankColor}
-          />
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="grid lg:grid-cols-2 gap-8">
+            <TeamDetailsSection
+              title={`Your Team (${myTeamId})`}
+              players={myTeam}
+              isMyTeam={true}
+              isDarkMode={isDarkMode}
+              getRankColor={getRankColor}
+            />
+            <TeamDetailsSection
+              title={`Enemy Team (${enemyTeamId})`}
+              players={enemyTeam}
+              isMyTeam={false}
+              isDarkMode={isDarkMode}
+              getRankColor={getRankColor}
+            />
+          </div>
+        )}
 
-          {/* Enemy Team */}
-          <TeamDetailsSection
-            title={`Enemy Team (${enemyTeamId})`}
-            players={enemyTeam}
-            isMyTeam={false}
+        {activeTab === 'timeline' && (
+          <MatchTimeline
+            timelineData={timelineData}
+            allPlayers={[...myTeam, ...enemyTeam]}
+            myTeamId={myTeamId}
             isDarkMode={isDarkMode}
-            getRankColor={getRankColor}
           />
-        </div>
+        )}
+
+        {activeTab === 'economy' && (
+          <EconomyAnalysis
+            roundResults={matchDetails.roundResults || []}
+            allPlayers={[...myTeam, ...enemyTeam]}
+            myTeamId={myTeamId}
+            isDarkMode={isDarkMode}
+          />
+        )}
       </div>
     </div>
   );
