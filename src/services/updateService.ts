@@ -102,7 +102,7 @@ export class UpdateService {
     // If we have a direct EXE download URL, try to download and launch it
     if (updateInfo.exeDownloadUrl) {
       try {
-        await this.downloadAndLaunchExe(updateInfo.exeDownloadUrl, updateInfo.version);
+        await this.downloadAndLaunchUpdate(updateInfo);
         return;
       } catch (error) {
         console.error('Failed to download EXE directly, falling back to browser:', error);
@@ -121,13 +121,17 @@ export class UpdateService {
     }
   }
 
-  private static async downloadAndLaunchExe(downloadUrl: string, version: string): Promise<void> {
+  static async downloadAndLaunchUpdate(updateInfo: UpdateInfo): Promise<void> {
+    if (!updateInfo.exeDownloadUrl) {
+      throw new Error('No direct download URL available');
+    }
+
     try {
       // Create a temporary filename
-      const fileName = `valorant-companion-v${version}.exe`;
+      const fileName = `ValRadiant-v${updateInfo.version}.exe`;
       
       // Download the file using fetch
-      const response = await fetch(downloadUrl);
+      const response = await fetch(updateInfo.exeDownloadUrl);
       if (!response.ok) {
         throw new Error(`Download failed: ${response.status} ${response.statusText}`);
       }
@@ -148,11 +152,21 @@ export class UpdateService {
       // Clean up the blob URL
       window.URL.revokeObjectURL(url);
       
-      // Show success message
-      console.log(`Downloaded ${fileName} successfully`);
+      // For mandatory updates, we should close the app after download
+      if (updateInfo.mandatory) {
+        // Give user time to see the download complete
+        setTimeout(() => {
+          // Try to close the app via Electron API
+          if ((window as any).electronAPI?.appQuit) {
+            (window as any).electronAPI.appQuit();
+          } else {
+            // Fallback: show message to user
+            alert('Update downloaded! Please close the app and run the downloaded installer.');
+          }
+        }, 2000);
+      }
       
-      // Note: Auto-launching the EXE is not possible due to browser security restrictions
-      // The user will need to manually run the downloaded file
+      console.log(`Downloaded ${fileName} successfully`);
       
     } catch (error) {
       console.error('Failed to download EXE:', error);

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { MyTeamSection, EnemyTeamSection } from './components/TeamSection';
 import { MatchHistoryPage } from './components/MatchHistoryPage';
-import { WelcomeScreen } from './components/WelcomeScreen';
 import { FAQPage } from './components/FAQPage';
 import { SuggestionsPage } from './components/SuggestionsPage';
 import { AnalysisPage } from './components/AnalysisPage';
@@ -10,12 +9,14 @@ import { MaintenanceScreen } from './components/MaintenanceScreen';
 import { BannedScreen } from './components/BannedScreen';
 import { Footer } from './components/Footer';
 import { UpdateModal } from './components/UpdateModal';
+import { MandatoryUpdateModal } from './components/MandatoryUpdateModal';
 import { useValorantData } from './hooks/useValorantData';
 import { PlayerInfo, ValorantTokens } from './types/valorant';
 import { getProcessedMatchHistory, initializeMatchHistoryAPI } from './services/matchHistoryAPI';
 import { ValorantAPI } from './services/valorantAPI';
 import { MaintenanceService } from './services/maintenanceService';
 import { UserService } from './services/userService';
+import { UpdateService } from './services/updateService';
 import { supabase } from './services/supabaseClient';
 
 function App() {
@@ -34,8 +35,8 @@ function App() {
   const [banReason, setBanReason] = useState<string | undefined>();
   const [isInitializing, setIsInitializing] = useState(true);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [mandatoryUpdate, setMandatoryUpdate] = useState<any>(null);
   const [databaseConnectionFailed, setDatabaseConnectionFailed] = useState(false);
-  const [showWelcomeScreen, setShowWelcomeScreen] = useState(true);
   const [refreshCooldown, setRefreshCooldown] = useState(0);
 
   const {
@@ -108,6 +109,22 @@ function App() {
     };
 
     checkMaintenance();
+  }, []);
+
+  // Check for mandatory updates on app launch
+  useEffect(() => {
+    const checkMandatoryUpdates = async () => {
+      try {
+        const updateStatus = await UpdateService.checkForUpdates(true);
+        if (updateStatus.hasUpdate && updateStatus.updateInfo?.mandatory) {
+          setMandatoryUpdate(updateStatus.updateInfo);
+        }
+      } catch (error) {
+        console.error('Failed to check for mandatory updates:', error);
+      }
+    };
+
+    checkMandatoryUpdates();
   }, []);
 
   // Initialize user when connected and not in maintenance
@@ -227,10 +244,6 @@ function App() {
     setCurrentView('main');
   };
 
-  const handleContinueFromWelcome = () => {
-    setShowWelcomeScreen(false);
-  };
-
   const handleRefreshWithCooldown = () => {
     if (refreshCooldown > 0) return;
     
@@ -245,6 +258,21 @@ function App() {
   const handleCloseUpdateModal = () => {
     setShowUpdateModal(false);
   };
+
+  const handleCloseMandatoryUpdate = () => {
+    setMandatoryUpdate(null);
+  };
+
+  // Show mandatory update modal if required
+  if (mandatoryUpdate) {
+    return (
+      <MandatoryUpdateModal
+        updateInfo={mandatoryUpdate}
+        onClose={handleCloseMandatoryUpdate}
+        isDarkMode={isDarkMode}
+      />
+    );
+  }
 
   // Show database connection error screen
   if (databaseConnectionFailed) {
@@ -264,17 +292,6 @@ function App() {
           </p>
         </div>
       </div>
-    );
-  }
-
-  // Show welcome screen if enabled and user is available
-  if (showWelcomeScreen && currentUser && !isMaintenanceMode && !isBanned && !databaseConnectionFailed) {
-    return (
-      <WelcomeScreen
-        currentUser={currentUser}
-        isDarkMode={isDarkMode}
-        onContinue={handleContinueFromWelcome}
-      />
     );
   }
 
@@ -399,6 +416,17 @@ function App() {
           }}
         />
       </div>
+
+      {/* Welcome Message */}
+      {currentUser && !isLoading && (
+        <div className="text-center mb-6">
+          <h2 className={`text-xl font-semibold ${
+            isDarkMode ? 'text-blue-300' : 'text-blue-700'
+          }`}>
+            Welcome back, {currentUser.name.split('#')[0]}!
+          </h2>
+        </div>
+      )}
 
       <div className="relative z-10 container mx-auto px-6 py-8">
         <Header 
