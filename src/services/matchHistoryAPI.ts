@@ -1,5 +1,6 @@
 import { ValorantTokens, MatchHistoryEntry, MatchDetails, CompetitiveUpdate, ProcessedMatch, MatchPlayer } from '../types/matchHistory';
-import { AGENTS, MAPS, QUEUE_TYPES } from '../constants/valorant';
+import { AGENTS, QUEUE_TYPES } from '../constants/valorant';
+import { MAPS } from '../constants/maps';
 
 export class MatchHistoryAPI {
   private tokens: ValorantTokens;
