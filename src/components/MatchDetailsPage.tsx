@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Crown, Target, Clock, Users, Moon, Sun, Activity, Bomb, Shield, Zap, Skull, DollarSign } from 'lucide-react';
 import { MatchDetails, MatchPlayer, RoundEconomy } from '../types/matchHistory';
 import { AGENTS, RANKS } from '../constants/valorant';
@@ -34,6 +34,11 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'economy'>('overview');
   
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const mapInfo = MAPS[matchDetails.matchInfo.mapId] || { 
     name: 'Unknown Map', 
     image: 'https://via.placeholder.com/300x200?text=Unknown+Map' 
