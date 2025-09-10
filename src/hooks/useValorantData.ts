@@ -43,7 +43,18 @@ export const useValorantData = () => {
       
       // Try to fetch tokens if not connected
       if (!isConnected) {
-        await apiRef.current.fetchTokens();
+        try {
+          await apiRef.current.fetchTokens();
+        } catch (error) {
+          // Don't retry immediately on rate limit errors
+          if (error.toString().includes('429')) {
+            console.warn('Rate limited during token fetch - backing off');
+            setError('Rate limited - please wait before refreshing');
+            return;
+          }
+          throw error;
+        }
+        
         // Initialize match history API when tokens are available (always fresh)
         const tokens = await apiRef.current.getTokens();
         if (tokens) {
@@ -68,6 +79,8 @@ export const useValorantData = () => {
       if (errorMessage.includes('Database connection failed')) {
         setError('Database connection failed. App cannot function without database access.');
         setDatabaseConnected(false);
+      } else if (errorMessage.includes('429') || errorMessage.includes('Rate limited')) {
+        setError('Rate limited by Riot API. Please wait a moment before refreshing.');
       } else if (errorMessage.includes('fetchTokens') || errorMessage.includes('Cannot read properties of undefined')) {
         setError('Please launch Valorant to use this app');
       } else if (errorMessage.includes('Failed to fetch tokens')) {

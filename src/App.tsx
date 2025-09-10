@@ -39,6 +39,13 @@ function App() {
   const [databaseConnectionFailed, setDatabaseConnectionFailed] = useState(false);
   const [refreshCooldown, setRefreshCooldown] = useState(0);
 
+  // Cache for current user to avoid repeated API calls
+  const [userDataCache, setUserDataCache] = useState<{
+    puuid: string;
+    userData: PlayerInfo;
+    timestamp: number;
+  } | null>(null);
+
   const {
     status,
     side,
@@ -167,34 +174,61 @@ function App() {
   // Get current user PUUID when connected
   useEffect(() => {
     const getCurrentUserInfo = async () => {
-      if (isConnected && !currentUser) {
+      if (isConnected && !currentUser && !isInitializing) {
         try {
           const tokens = await window.electronAPI.fetchTokens();
+          
+          // Check cache first (cache for 5 minutes)
+          const now = Date.now();
+          const cacheValidDuration = 5 * 60 * 1000; // 5 minutes
+          
+          if (userDataCache && 
+              userDataCache.puuid === tokens.puuid && 
+              (now - userDataCache.timestamp) < cacheValidDuration) {
+            // Use cached data
+            setCurrentUser(userDataCache.userData);
+            return;
+          }
+
+          // Only fetch if we don't have cached data or it's stale
           const api = new ValorantAPI();
           await api.fetchTokens();
           
-          // Get user's rank
+          // Get user's rank (this is the expensive call)
           const rank = await api.getPlayerRank(tokens.puuid);
           
           // Get user's name
           const names = await api.getPlayerNames([tokens.puuid]);
           const userName = names[tokens.puuid] || 'You';
           
-          setCurrentUser({
+          const userData: PlayerInfo = {
             puuid: tokens.puuid,
             name: userName,
             agent: '',
             rank: rank,
             teamId: ''
+          };
+          
+          // Cache the data
+          setUserDataCache({
+            puuid: tokens.puuid,
+            userData,
+            timestamp: now
           });
+          
+          setCurrentUser(userData);
         } catch (error) {
-          console.error('Failed to get current user:', error);
+          console.error('Failed to get current user info:', error);
+          // Don't retry immediately on rate limit errors
+          if (error.toString().includes('429')) {
+            console.warn('Rate limited - will retry later');
+          }
         }
       }
     };
     
     getCurrentUserInfo();
-  }, [isConnected, currentUser]);
+  }, [isConnected, currentUser, isInitializing, userDataCache]);
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);

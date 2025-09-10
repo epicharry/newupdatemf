@@ -12,6 +12,9 @@ export class ValorantAPI {
   private currentShard: string = DEFAULT_SHARD;
   private currentMatchId: string = '';
   private startingSide: string = '';
+  private rankCache: Map<string, { rank: RankInfo; timestamp: number }> = new Map();
+  private nameCache: Map<string, { names: Record<string, string>; timestamp: number }> = new Map();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   constructor() {
     this.configService = new ConfigService();
@@ -134,6 +137,14 @@ export class ValorantAPI {
   }
 
   async getPlayerRank(puuid: string): Promise<RankInfo> {
+    // Check cache first
+    const cached = this.rankCache.get(puuid);
+    const now = Date.now();
+    
+    if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
+      return cached.rank;
+    }
+
     try {
       // Try competitive updates first
       const competitiveResponse = await this.makeRequestWithRetry(
@@ -143,11 +154,15 @@ export class ValorantAPI {
       if (competitiveResponse.status === 200 && competitiveResponse.data?.Matches) {
         for (const match of competitiveResponse.data.Matches) {
           if (match.TierAfterUpdate > 0) {
-            return {
+            const rank = {
               tier: match.TierAfterUpdate,
               rr: match.RankedRatingAfterUpdate,
               rank: RANKS[match.TierAfterUpdate] || "Unranked"
             };
+            
+            // Cache the result
+            this.rankCache.set(puuid, { rank, timestamp: now });
+            return rank;
           }
         }
       }
@@ -163,11 +178,15 @@ export class ValorantAPI {
         const currentRR = competitive.CurrentSeasonEndRankedRating || 0;
 
         if (currentTier > 0) {
-          return {
+          const rank = {
             tier: currentTier,
             rr: currentRR,
             rank: RANKS[currentTier] || "Unranked"
           };
+          
+          // Cache the result
+          this.rankCache.set(puuid, { rank, timestamp: now });
+          return rank;
         }
 
         // Final fallback to seasonal info
@@ -175,22 +194,44 @@ export class ValorantAPI {
         if (Object.keys(seasonalInfo).length > 0) {
           const latestSeason = Object.values(seasonalInfo)[Object.values(seasonalInfo).length - 1] as any;
           if (latestSeason.CompetitiveTier > 0) {
-            return {
+            const rank = {
               tier: latestSeason.CompetitiveTier,
               rr: latestSeason.RankedRating,
               rank: RANKS[latestSeason.CompetitiveTier] || "Unranked"
             };
+            
+            // Cache the result
+            this.rankCache.set(puuid, { rank, timestamp: now });
+            return rank;
           }
         }
       }
     } catch (error) {
-      console.error(`Rank fetch error: ${error}`);
+      console.error(`Rank fetch error for ${puuid}: ${error}`);
+      
+      // If we have cached data, return it even if stale during errors
+      if (cached) {
+        console.warn(`Using stale cached rank data for ${puuid}`);
+        return cached.rank;
+      }
     }
 
-    return { tier: 0, rr: 0, rank: "Unranked" };
+    const defaultRank = { tier: 0, rr: 0, rank: "Unranked" };
+    // Cache the default rank to avoid repeated failed requests
+    this.rankCache.set(puuid, { rank: defaultRank, timestamp: now });
+    return defaultRank;
   }
 
   async getPlayerNames(puuids: string[]): Promise<Record<string, string>> {
+    // Check cache first
+    const cacheKey = puuids.sort().join(',');
+    const cached = this.nameCache.get(cacheKey);
+    const now = Date.now();
+    
+    if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
+      return cached.names;
+    }
+
     try {
       const response = await this.makeRequestWithRetry(
         `https://pd.${this.currentRegion}.a.pvp.net/name-service/v2/players`,
@@ -201,13 +242,23 @@ export class ValorantAPI {
       );
 
       if (response.status === 200) {
-        return response.data.reduce((acc: Record<string, string>, player: any) => {
+        const names = response.data.reduce((acc: Record<string, string>, player: any) => {
           acc[player.Subject] = `${player.GameName}#${player.TagLine}`;
           return acc;
         }, {});
+        
+        // Cache the result
+        this.nameCache.set(cacheKey, { names, timestamp: now });
+        return names;
       }
     } catch (error) {
       console.error('Failed to fetch player names:', error);
+      
+      // If we have cached data, return it even if stale during errors
+      if (cached) {
+        console.warn(`Using stale cached name data for ${cacheKey}`);
+        return cached.names;
+      }
     }
 
     return {};
