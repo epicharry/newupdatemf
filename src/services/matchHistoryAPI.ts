@@ -410,6 +410,15 @@ export class MatchHistoryAPI {
       // Get agent info
       const agentName = AGENTS[player.characterId] || 'Unknown';
 
+      // Determine queue type - handle custom games
+      let queueType = QUEUE_TYPES[matchDetails.matchInfo.queueID] || 'Unknown';
+      
+      // Check if it's a custom game based on provisioning flow
+      if (matchDetails.matchInfo.provisioningFlow === 'CustomGame' || 
+          matchDetails.matchInfo.queueID === 'custom') {
+        queueType = 'Custom Game';
+      }
+
       // Format KDA
       const kda = `${player.stats.kills}/${player.stats.deaths}/${player.stats.assists}`;
 
@@ -418,7 +427,7 @@ export class MatchHistoryAPI {
         gameStartTime: matchDetails.matchInfo.gameStartMillis,
         mapName: mapInfo.name,
         mapImage: mapInfo.image,
-        queueType: QUEUE_TYPES[matchDetails.matchInfo.queueID] || 'Unknown',
+        queueType,
         isRanked: matchDetails.matchInfo.isRanked,
         playerStats: {
           kills: player.stats.kills,
