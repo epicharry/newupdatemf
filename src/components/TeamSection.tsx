@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Sword } from 'lucide-react';
+import { Shield, Sword, Users } from 'lucide-react';
 import { PlayerCard } from './PlayerCard';
 import { PlayerInfo } from '../types/valorant';
 
