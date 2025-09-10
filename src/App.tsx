@@ -448,6 +448,7 @@ function App() {
           onViewAnalysis={handleViewAnalysis}
           showAnalysisButton={isConnected && matchDetected && (myTeamPlayers.length > 0 || enemyTeamPlayers.length > 0)}
           refreshCooldown={refreshCooldown}
+          currentUser={currentUser}
         />
 
         {/* Teams Container */}

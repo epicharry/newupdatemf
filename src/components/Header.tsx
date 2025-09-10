@@ -20,6 +20,7 @@ interface HeaderProps {
   onViewAnalysis?: () => void;
   showAnalysisButton?: boolean;
   refreshCooldown?: number;
+  currentUser?: { name: string } | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -40,7 +41,8 @@ export const Header: React.FC<HeaderProps> = ({
   onViewSuggestions,
   onViewAnalysis,
   showAnalysisButton = false,
-  refreshCooldown = 0
+  refreshCooldown = 0,
+  currentUser = null
 }) => {
   const getStatusIcon = () => {
     if (status.includes('Agent Select')) {
@@ -65,6 +67,13 @@ export const Header: React.FC<HeaderProps> = ({
     return 'Good Evening';
   };
 
+  const getUserDisplayName = () => {
+    if (!currentUser) return 'Player';
+    
+    // Extract just the name part before the # if it exists
+    const nameParts = currentUser.name.split('#');
+    return nameParts[0] || 'Player';
+  };
   return (
     <div className="mb-8">
       {/* Top Section - Welcome and Controls */}
@@ -103,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({
               <p className={`text-lg ${
                 isDarkMode ? 'text-blue-300' : 'text-blue-700'
               }`}>
-                Welcome to ValRadiant
+                Welcome {getUserDisplayName()}
               </p>
               <p className={`text-sm ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-600'
