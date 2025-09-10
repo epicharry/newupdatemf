@@ -75,6 +75,7 @@ export interface Kill {
     damageItem: string;
     isSecondaryFireMode: boolean;
   };
+  damage?: number;
 }
 
 export interface RoundStats {

@@ -509,6 +509,11 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
   };
 
   const getWeaponName = (weaponId: string) => {
+    // Handle special cases first
+    if (weaponId.toLowerCase() === 'ultimate') {
+      return 'Ultimate';
+    }
+    
     return WEAPONS[weaponId.toLowerCase()] || 'Unknown Weapon';
   };
   return (
@@ -629,7 +634,15 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
                             }`}>
                               ({getPlayerAgent(kill.victim)})
                             </span>
-                            {kill.finishingDamage.damageType === 'Melee' ? (
+                            {kill.finishingDamage.damageItem.toLowerCase() === 'ultimate' ? (
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                isDarkMode 
+                                  ? 'bg-purple-600/20 border border-purple-500/30 text-purple-400' 
+                                  : 'bg-purple-500/15 border border-purple-400/30 text-purple-700'
+                              }`}>
+                                ⚡ ULTIMATE
+                              </span>
+                            ) : kill.finishingDamage.damageType === 'Melee' ? (
                               <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                 isDarkMode 
                                   ? 'bg-red-600/20 border border-red-500/30 text-red-400' 
@@ -653,6 +666,15 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
                               isDarkMode ? 'text-gray-500' : 'text-gray-500'
                             }`}>
                               Assisted by: {kill.assistants.map(getPlayerName).join(', ')}
+                            </div>
+                          )}
+                          
+                          {/* Show damage if available */}
+                          {kill.damage && (
+                            <div className={`text-xs mt-1 ${
+                              isDarkMode ? 'text-orange-400' : 'text-orange-600'
+                            }`}>
+                              💥 {kill.damage} damage
                             </div>
                           )}
                         </div>
