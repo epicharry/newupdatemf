@@ -18,6 +18,8 @@ import { MaintenanceService } from './services/maintenanceService';
 import { UserService } from './services/userService';
 import { UpdateService } from './services/updateService';
 import { supabase } from './services/supabaseClient';
+import { EmergencyMOTDService, EmergencyMOTD } from './services/emergencyMOTDService';
+import { EmergencyMOTD as EmergencyMOTDComponent } from './components/EmergencyMOTD';
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -38,6 +40,8 @@ function App() {
   const [mandatoryUpdate, setMandatoryUpdate] = useState<any>(null);
   const [databaseConnectionFailed, setDatabaseConnectionFailed] = useState(false);
   const [refreshCooldown, setRefreshCooldown] = useState(0);
+  const [emergencyMOTD, setEmergencyMOTD] = useState<EmergencyMOTD | null>(null);
+  const [motdDismissed, setMotdDismissed] = useState(false);
 
   // Cache for current user to avoid repeated API calls
   const [userDataCache, setUserDataCache] = useState<{
@@ -133,6 +137,29 @@ function App() {
 
     checkMandatoryUpdates();
   }, []);
+
+  // Check for emergency MOTD on app launch and periodically
+  useEffect(() => {
+    const checkEmergencyMOTD = async () => {
+      try {
+        const motd = await EmergencyMOTDService.getEmergencyMOTD();
+        setEmergencyMOTD(motd);
+        
+        // Reset dismissal state when MOTD changes
+        if (motd && emergencyMOTD?.id !== motd.id) {
+          setMotdDismissed(false);
+        }
+      } catch (error) {
+        console.error('Failed to check emergency MOTD:', error);
+      }
+    };
+
+    checkEmergencyMOTD();
+    
+    // Check for MOTD updates every 2 minutes
+    const interval = setInterval(checkEmergencyMOTD, 2 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [emergencyMOTD?.id]);
 
   // Initialize user when connected and not in maintenance
   useEffect(() => {
@@ -295,6 +322,10 @@ function App() {
 
   const handleCloseMandatoryUpdate = () => {
     setMandatoryUpdate(null);
+  };
+
+  const handleDismissMOTD = () => {
+    setMotdDismissed(true);
   };
 
   // Show mandatory update modal if required
@@ -475,6 +506,17 @@ function App() {
         />
 
         {/* Teams Container */}
+        {/* Emergency MOTD */}
+        {emergencyMOTD && !motdDismissed && (
+          <div className="max-w-6xl mx-auto mb-8">
+            <EmergencyMOTDComponent
+              motd={emergencyMOTD}
+              onDismiss={handleDismissMOTD}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+        )}
+
         {myTeamPlayers.length > 0 && (
           <div className={`max-w-6xl mx-auto ${
             enemyTeamPlayers.length > 0 ? 'grid lg:grid-cols-2 gap-8' : 'max-w-3xl'
