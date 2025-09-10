@@ -79,7 +79,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
   };
 
   const processTimelineData = () => {
-    if (!matchDetails.roundResults) return [];
+    if (!matchDetails.roundResults || !matchDetails.kills) return [];
     
     return matchDetails.roundResults.map((round, index) => {
       const roundKills = matchDetails.kills?.filter(kill => kill.round === round.roundNum) || [];
@@ -258,7 +258,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
               isDarkMode={isDarkMode}
               getRankColor={getRankColor}
               allPlayers={[...myTeam, ...enemyTeam]}
-             matchDetails={matchDetails}
+              matchDetails={matchDetails}
             />
             {matchDetails.matchInfo.queueID !== 'deathmatch' && (
               <TeamDetailsSection
@@ -268,7 +268,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
                 isDarkMode={isDarkMode}
                 getRankColor={getRankColor}
                 allPlayers={[...myTeam, ...enemyTeam]}
-               matchDetails={matchDetails}
+                matchDetails={matchDetails}
               />
             )}
           </div>
@@ -303,7 +303,7 @@ interface TeamDetailsSectionProps {
   isDarkMode: boolean;
   getRankColor: (tier: number) => string;
   allPlayers: MatchPlayer[];
- matchDetails: MatchDetails;
+  matchDetails: MatchDetails;
 }
 
 const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
@@ -312,8 +312,8 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
   isMyTeam,
   isDarkMode,
   getRankColor,
- allPlayers,
- matchDetails
+  allPlayers,
+  matchDetails
 }) => {
   // Sort players by score (highest first)
   const sortedPlayers = [...players].sort((a, b) => b.stats.score - a.stats.score);
@@ -369,7 +369,7 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
             isMatchMVP={player.subject === matchMVP.subject}
             isDarkMode={isDarkMode}
             getRankColor={getRankColor}
-           matchDetails={matchDetails}
+            matchDetails={matchDetails}
           />
         ))}
       </div>
@@ -382,15 +382,15 @@ interface PlayerDetailsCardProps {
   isMatchMVP: boolean;
   isDarkMode: boolean;
   getRankColor: (tier: number) => string;
- matchDetails: MatchDetails;
+  matchDetails: MatchDetails;
 }
 
 const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
   player,
   isMatchMVP,
   isDarkMode,
- getRankColor,
- matchDetails
+  getRankColor,
+  matchDetails
 }) => {
   const agentName = AGENTS[player.characterId] || 'Unknown';
   const agentImageUrl = `https://media.valorant-api.com/agents/${player.characterId}/displayicon.png`;
@@ -526,6 +526,7 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
     
     return WEAPONS[weaponId] || 'Unknown Weapon';
   };
+  
   return (
     <div className="space-y-4">
       {timelineData.map((round) => (
