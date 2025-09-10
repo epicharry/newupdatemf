@@ -79,7 +79,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
   };
 
   const processTimelineData = () => {
-    if (!matchDetails.roundResults || !matchDetails.kills) return [];
+    if (!matchDetails.roundResults) return [];
     
     return matchDetails.roundResults.map((round, index) => {
       const roundKills = matchDetails.kills?.filter(kill => kill.round === round.roundNum) || [];
@@ -894,7 +894,7 @@ interface PlayerEconomyCardProps {
   playerName: string;
   playerAgent: string;
   getWeaponName: (weaponId: string) => string;
-  getArmorName: (armorValue: string | number) => string;
+  getArmorName: (armorValue: number) => string;
   formatCredits: (amount: number) => string;
   isDarkMode: boolean;
 }
@@ -968,6 +968,26 @@ const PlayerEconomyCard: React.FC<PlayerEconomyCardProps> = ({
           Value: {formatCredits(playerEconomy.loadoutValue)}
         </div>
       </div>
+      
+      {/* Equipment */}
+      {Object.keys(playerEconomy.equipment || {}).length > 0 && (
+        <div className="mt-2 pt-2 border-t border-gray-300/20">
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(playerEconomy.equipment || {}).map(([item, count]) => (
+              <span
+                key={item}
+                className={`text-xs px-2 py-1 rounded-full ${
+                  isDarkMode 
+                    ? 'bg-purple-600/20 text-purple-400' 
+                    : 'bg-purple-500/15 text-purple-700'
+                }`}
+              >
+                {getWeaponName(item)} {count > 1 && `x${count}`}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
