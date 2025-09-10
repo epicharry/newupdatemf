@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { MyTeamSection, EnemyTeamSection, PlayerGridLayout } from './components/TeamSection';
+import { PlayerGridLayout } from './components/TeamSection';
 import { MatchHistoryPage } from './components/MatchHistoryPage';
 import { FAQPage } from './components/FAQPage';
 import { SuggestionsPage } from './components/SuggestionsPage';
@@ -9,6 +9,16 @@ import { MaintenanceScreen } from './components/MaintenanceScreen';
 import { BannedScreen } from './components/BannedScreen';
 import { Footer } from './components/Footer';
 import { UpdateModal } from './components/UpdateModal';
+import { EmergencyMOTD } from './components/EmergencyMOTD';
+import { MandatoryUpdateModal } from './components/MandatoryUpdateModal';
+import { useValorantData } from './hooks/useValorantData';
+import { ValorantAPI } from './services/valorantAPI';
+import { UserService } from './services/userService';
+import { MaintenanceService } from './services/maintenanceService';
+import { UpdateService } from './services/updateService';
+import { EmergencyMOTDService, EmergencyMOTD as EmergencyMOTDType } from './services/emergencyMOTDService';
+import { supabase } from './services/supabaseClient';
+import { PlayerInfo } from './types/valorant';
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -29,7 +39,7 @@ function App() {
   const [mandatoryUpdate, setMandatoryUpdate] = useState<any>(null);
   const [databaseConnectionFailed, setDatabaseConnectionFailed] = useState(false);
   const [refreshCooldown, setRefreshCooldown] = useState(0);
-  const [emergencyMOTD, setEmergencyMOTD] = useState<EmergencyMOTD | null>(null);
+  const [emergencyMOTD, setEmergencyMOTD] = useState<EmergencyMOTDType | null>(null);
   const [motdDismissed, setMotdDismissed] = useState(false);
 
   // Cache for current user to avoid repeated API calls
@@ -245,6 +255,7 @@ function App() {
     
     getCurrentUserInfo();
   }, [isConnected, currentUser, isInitializing, userDataCache]);
+
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
@@ -336,11 +347,6 @@ function App() {
           ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
           : 'bg-gradient-to-br from-red-50 via-white to-red-50'
       }`}>
-        <div className={`min-h-screen flex items-center justify-center transition-all duration-500 ${
-        isDarkMode 
-          ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
-          : 'bg-gradient-to-br from-red-50 via-white to-red-50'
-      }`}>
         <div className="text-center max-w-md mx-auto px-6">
           <div className="text-6xl mb-4">🔒</div>
           <h1 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
@@ -350,7 +356,6 @@ function App() {
             Unable to connect to the application database. Please check your internet connection and try again.
           </p>
         </div>
-      </div>
       </div>
     );
   }
@@ -459,11 +464,6 @@ function App() {
 
   return (
     <div className={`min-h-screen transition-all duration-500 ${
-      isDarkMode 
-        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
-        : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
-    }`}>
-      <div className={`min-h-screen transition-all duration-500 ${
       isDarkMode 
         ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
         : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
@@ -640,11 +640,10 @@ function App() {
           currentUser={currentUser}
         />
 
-        {/* Teams Container */}
         {/* Emergency MOTD */}
         {emergencyMOTD && !motdDismissed && (
           <div className="max-w-6xl mx-auto mb-8">
-            <EmergencyMOTDComponent
+            <EmergencyMOTD
               motd={emergencyMOTD}
               onDismiss={handleDismissMOTD}
               isDarkMode={isDarkMode}
@@ -727,7 +726,6 @@ function App() {
         onClose={handleCloseUpdateModal}
         isDarkMode={isDarkMode}
       />
-      </div>
     </div>
   );
 }
