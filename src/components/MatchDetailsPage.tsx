@@ -257,6 +257,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
               isDarkMode={isDarkMode}
               getRankColor={getRankColor}
               allPlayers={[...myTeam, ...enemyTeam]}
+             matchDetails={matchDetails}
             />
             {matchDetails.matchInfo.queueID !== 'deathmatch' && (
               <TeamDetailsSection
@@ -266,6 +267,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
                 isDarkMode={isDarkMode}
                 getRankColor={getRankColor}
                 allPlayers={[...myTeam, ...enemyTeam]}
+               matchDetails={matchDetails}
               />
             )}
           </div>
@@ -291,6 +293,7 @@ interface TeamDetailsSectionProps {
   isDarkMode: boolean;
   getRankColor: (tier: number) => string;
   allPlayers: MatchPlayer[];
+ matchDetails: MatchDetails;
 }
 
 const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
@@ -299,7 +302,8 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
   isMyTeam,
   isDarkMode,
   getRankColor,
-  allPlayers
+ allPlayers,
+ matchDetails
 }) => {
   // Sort players by score (highest first)
   const sortedPlayers = [...players].sort((a, b) => b.stats.score - a.stats.score);
@@ -355,6 +359,7 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
             isMatchMVP={player.subject === matchMVP.subject}
             isDarkMode={isDarkMode}
             getRankColor={getRankColor}
+           matchDetails={matchDetails}
           />
         ))}
       </div>
@@ -367,13 +372,15 @@ interface PlayerDetailsCardProps {
   isMatchMVP: boolean;
   isDarkMode: boolean;
   getRankColor: (tier: number) => string;
+ matchDetails: MatchDetails;
 }
 
 const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
   player,
   isMatchMVP,
   isDarkMode,
-  getRankColor
+ getRankColor,
+ matchDetails
 }) => {
   const agentName = AGENTS[player.characterId] || 'Unknown';
   const agentImageUrl = `https://media.valorant-api.com/agents/${player.characterId}/displayicon.png`;
