@@ -519,12 +519,12 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
   };
 
   const getWeaponName = (weaponId: string) => {
-    // Handle special cases first
-    if (weaponId.toLowerCase() === 'ultimate') {
+    // Handle special cases first  
+    if (weaponId === 'Ultimate' || weaponId.toLowerCase() === 'ultimate') {
       return 'Ultimate';
     }
     
-    return WEAPONS[weaponId.toLowerCase()] || 'Unknown Weapon';
+    return WEAPONS[weaponId] || 'Unknown Weapon';
   };
   return (
     <div className="space-y-4">
@@ -731,23 +731,30 @@ const EconomyTab: React.FC<EconomyTabProps> = ({
   };
 
   const getWeaponName = (weaponId: string) => {
+    // Handle empty weapon ID
+    if (!weaponId) return 'No Weapon';
+    
     return WEAPONS[weaponId] || 'Unknown Weapon';
   };
 
   const getArmorName = (armorValue: number) => {
-    if (armorValue === 0) return 'No Armor';
-    if (armorValue <= 25) return 'Light Armor';
-    if (armorValue <= 50) return 'Heavy Armor';
-    return 'Full Armor';
+    // Handle armor ID strings from the API
+    if (!armorValue || armorValue === '') return 'No Armor';
+    if (armorValue === '4DEC83D5-4902-9AB3-BED6-A7A390761157') return 'Light Armor';
+    if (armorValue === 'B1B9086D-41BD-A516-5D29-E3B34A6F1644') return 'Light Armor';
+    if (armorValue === '822BCAB2-40A2-324E-C137-E09195AD7692') return 'Heavy Armor';
+    return 'Armor';
   };
 
   const formatCredits = (amount: number) => {
     return amount.toLocaleString();
   };
 
-  // Mock economy data since it might not be available in all match details
-  // In a real implementation, this would come from matchDetails.rounds
-  const economyData = matchDetails.rounds || [];
+  // Get economy data from roundResults
+  const economyData = matchDetails.roundResults?.map(round => ({
+    round: round.roundNum,
+    playerEconomies: round.playerEconomies || []
+  })) || [];
 
   // If no economy data available, show a message
   if (economyData.length === 0) {

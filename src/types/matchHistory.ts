@@ -81,20 +81,16 @@ export interface Kill {
 
 export interface RoundEconomy {
   round: number;
-  playerEconomies: PlayerEconomy[];
+  playerEconomies: {
+    subject: string;
+    loadoutValue: number;
+    weapon: string;
+    armor: string;
+    remaining: number;
+    spent: number;
+  }[];
 }
 
-export interface PlayerEconomy {
-  subject: string;
-  loadoutValue: number;
-  weapon: string;
-  armor: number;
-  remaining: number;
-  spent: number;
-  equipment: {
-    [key: string]: number;
-  };
-}
 
 export interface RoundStats {
   roundNum: number;
