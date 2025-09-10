@@ -29,7 +29,12 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
       const status = await UpdateService.checkForUpdates(forceCheck);
       setUpdateStatus(status);
     } catch (error) {
-      console.error('Failed to check for updates:', error);
+      console.warn('Failed to check for updates:', error);
+      // Show a user-friendly message instead of failing silently
+      setUpdateStatus({
+        hasUpdate: false,
+        currentVersion: UpdateService.getCurrentVersion()
+      });
     } finally {
       setIsChecking(false);
     }

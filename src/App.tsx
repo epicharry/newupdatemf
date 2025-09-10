@@ -130,11 +130,15 @@ function App() {
           setMandatoryUpdate(updateStatus.updateInfo);
         }
       } catch (error) {
-        console.error('Failed to check for mandatory updates:', error);
+        console.warn('Failed to check for mandatory updates:', error);
+        // Don't block app startup if update check fails
       }
     };
 
-    checkMandatoryUpdates();
+    // Only check for updates if we're not in development mode
+    if (import.meta.env.PROD) {
+      checkMandatoryUpdates();
+    }
   }, []);
 
   // Check for emergency MOTD on app launch and periodically

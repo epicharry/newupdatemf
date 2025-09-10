@@ -214,6 +214,7 @@ export const Header: React.FC<HeaderProps> = ({
                           : 'bg-white/20 border-white/30 text-purple-700 hover:bg-white/30'
                         }
                       `}
+                      title="Check for app updates"
                     >
                       <Download className="w-4 h-4" />
                       <span>Updates</span>

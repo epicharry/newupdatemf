@@ -34,12 +34,33 @@ export class UpdateService {
         method: 'GET',
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'Valorant-Companion-App'
+          'User-Agent': 'ValRadiant-App/1.0.0'
         },
         cache: forceCheck ? 'no-cache' : 'default'
       });
 
       if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 403) {
+          console.warn('GitHub API rate limited or access denied');
+          // Return cached data if available, otherwise return no update
+          if (this.cachedUpdateInfo) {
+            return this.cachedUpdateInfo;
+          }
+          return {
+            hasUpdate: false,
+            currentVersion: this.CURRENT_VERSION
+          };
+        }
+        
+        if (response.status === 404) {
+          console.warn('Repository not found or private');
+          return {
+            hasUpdate: false,
+            currentVersion: this.CURRENT_VERSION
+          };
+        }
+        
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -71,9 +92,14 @@ export class UpdateService {
       
       return updateStatus;
     } catch (error) {
-      console.error('Failed to check for updates:', error);
+      console.warn('Failed to check for updates:', error);
       
-      // Return current version info on error
+      // Return cached data if available, otherwise return current version info
+      if (this.cachedUpdateInfo && !forceCheck) {
+        console.log('Using cached update info due to API error');
+        return this.cachedUpdateInfo;
+      }
+      
       const fallbackStatus: UpdateStatus = {
         hasUpdate: false,
         currentVersion: this.CURRENT_VERSION
