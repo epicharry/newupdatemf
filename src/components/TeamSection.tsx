@@ -3,7 +3,7 @@ import { Shield, Sword } from 'lucide-react';
 import { PlayerCard } from './PlayerCard';
 import { PlayerInfo } from '../types/valorant';
 
-interface DeathmatchGridProps {
+export interface DeathmatchGridProps {
   players: PlayerInfo[];
   isDarkMode: boolean;
   onPlayerClick?: (player: PlayerInfo) => void;
