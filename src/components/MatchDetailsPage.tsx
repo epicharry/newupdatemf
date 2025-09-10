@@ -476,6 +476,37 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
   const agentName = AGENTS[player.characterId] || 'Unknown';
   const agentImageUrl = `https://media.valorant-api.com/agents/${player.characterId}/displayicon.png`;
 
+  // Calculate headshot percentage for this player
+  const calculateHeadshotPercentage = () => {
+    if (!matchDetails.roundResults) return 0;
+    
+    let totalHeadshots = 0;
+    let totalBodyshots = 0;
+    let totalLegshots = 0;
+    
+    matchDetails.roundResults.forEach(round => {
+      const playerStats = round.playerStats?.find(ps => ps.subject === player.subject);
+      if (playerStats?.damage) {
+        playerStats.damage.forEach(dmg => {
+          totalHeadshots += dmg.headshots || 0;
+          totalBodyshots += dmg.bodyshots || 0;
+          totalLegshots += dmg.legshots || 0;
+        });
+      }
+    });
+    
+    const totalShots = totalHeadshots + totalBodyshots + totalLegshots;
+    return totalShots > 0 ? Math.round((totalHeadshots / totalShots) * 100) : 0;
+  };
+
+  // Calculate win rate (for this match it's just won/lost, but structure for future expansion)
+  const calculateWinRate = () => {
+    const playerTeam = matchDetails.teams?.find(team => team.teamId === player.teamId);
+    return playerTeam?.won ? 100 : 0; // For single match, it's either 100% or 0%
+  };
+
+  const headshotPercentage = calculateHeadshotPercentage();
+  const winRate = calculateWinRate();
   return (
     <div className={`
       backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300
@@ -492,87 +523,172 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
         : ''
       }
     `}>
-      <div className="flex items-center justify-between">
-        {/* Left: Agent + Player Info */}
-        <div className="flex items-center space-x-4">
-          {/* Agent Icon */}
-          <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/20">
-            <img 
-              src={agentImageUrl} 
-              alt={agentName}
-              className="w-full h-full object-cover"
-              draggable={false}
-              draggable={false}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = `https://via.placeholder.com/48x48?text=${agentName[0]}`;
-              }}
-            />
+      <div className="space-y-4">
+        {/* Main Player Info Row */}
+        <div className="flex items-center justify-between">
+          {/* Left: Agent + Player Info */}
+          <div className="flex items-center space-x-4">
+            {/* Agent Icon */}
+            <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/20">
+              <img 
+                src={agentImageUrl} 
+                alt={agentName}
+                className="w-full h-full object-cover"
+                draggable={false}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = `https://via.placeholder.com/48x48?text=${agentName[0]}`;
+                }}
+              />
+            </div>
+
+            {/* Player Info */}
+            <div>
+              <div className="flex items-center space-x-2 mb-1">
+                <span className={`font-semibold ${
+                  isDarkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  {player.gameName}#{player.tagLine}
+                </span>
+                {isMatchMVP && (
+                  <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30">
+                    <Crown className="w-3 h-3 text-yellow-400" />
+                    <span className="text-xs text-yellow-400 font-medium">Match MVP</span>
+                  </div>
+                )}
+                {partyInfo && (
+                  <div className={`
+                    flex items-center space-x-1 px-2 py-1 rounded-full
+                    ${isDarkMode 
+                      ? 'bg-purple-600/20 border border-purple-500/30' 
+                      : 'bg-purple-500/15 border border-purple-400/30'
+                    }
+                  `}>
+                    <Users className="w-3 h-3 text-purple-400" />
+                    <span className={`text-xs font-medium ${
+                      isDarkMode ? 'text-purple-300' : 'text-purple-700'
+                    }`}>
+                      {getPartyLabel(partyInfo.size)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className={`text-sm ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                {agentName}
+              </div>
+              {/* Only show rank for competitive matches */}
+              {matchDetails.matchInfo.isRanked && (
+                <div className="flex items-center space-x-2 mt-1">
+                  <img 
+                    src={`./rank-icons/${(RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '')}.png`}
+                    alt={RANKS[player.competitiveTier] || 'Unranked'}
+                    className="w-5 h-5"
+                    draggable={false}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                  <div className={`text-sm font-medium ${getRankColor(player.competitiveTier)}`}>
+                    {RANKS[player.competitiveTier] || 'Unranked'}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Player Info */}
-          <div>
-            <div className="flex items-center space-x-2 mb-1">
-              <span className={`font-semibold ${
-                isDarkMode ? 'text-white' : 'text-gray-800'
-              }`}>
-                {player.gameName}#{player.tagLine}
-              </span>
-              {isMatchMVP && (
-                <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30">
-                  <Crown className="w-3 h-3 text-yellow-400" />
-                  <span className="text-xs text-yellow-400 font-medium">Match MVP</span>
-                </div>
-              )}
-              {partyInfo && (
-                <div className={`
-                  flex items-center space-x-1 px-2 py-1 rounded-full
-                  ${isDarkMode 
-                    ? 'bg-purple-600/20 border border-purple-500/30' 
-                    : 'bg-purple-500/15 border border-purple-400/30'
-                  }
-                `}>
-                  <Users className="w-3 h-3 text-purple-400" />
-                  <span className={`text-xs font-medium ${
-                    isDarkMode ? 'text-purple-300' : 'text-purple-700'
-                  }`}>
-                    {getPartyLabel(partyInfo.size)}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className={`text-sm ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-600'
+          {/* Right: KDA Stats */}
+          <div className="text-right">
+            <div className={`text-lg font-bold mb-1 ${
+              isDarkMode ? 'text-white' : 'text-gray-800'
             }`}>
-              {agentName}
+              {player.stats.kills}/{player.stats.deaths}/{player.stats.assists}
             </div>
-            {/* Only show rank for competitive matches */}
-            {matchDetails.matchInfo.isRanked && (
-              <div className="flex items-center space-x-2 mt-1">
-                <img 
-                  src={`./rank-icons/${(RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '')}.png`}
-                  alt={RANKS[player.competitiveTier] || 'Unranked'}
-                  className="w-5 h-5"
-                  draggable={false}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-                <div className={`text-sm font-medium ${getRankColor(player.competitiveTier)}`}>
-                  {RANKS[player.competitiveTier] || 'Unranked'}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Right: Stats */}
-        <div className="text-right">
-          <div className={`text-lg font-bold mb-1 ${
-            isDarkMode ? 'text-white' : 'text-gray-800'
+        {/* Player Statistics Box */}
+        <div className={`
+          rounded-xl p-4 backdrop-blur-sm border
+          ${isDarkMode 
+            ? 'bg-slate-800/60 border-slate-700/50' 
+            : 'bg-white/30 border-white/40'
+          }
+        `}>
+          <div className={`text-sm font-medium mb-3 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-700'
           }`}>
-            {player.stats.kills}/{player.stats.deaths}/{player.stats.assists}
+            Match Statistics
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {/* Headshot Percentage */}
+            <div className="text-center">
+              <div className={`text-2xl font-bold mb-1 ${
+                headshotPercentage >= 50 
+                  ? 'text-green-400' 
+                  : headshotPercentage >= 25 
+                    ? 'text-yellow-400' 
+                    : 'text-red-400'
+              }`}>
+                {headshotPercentage}%
+              </div>
+              <div className={`text-xs ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Headshot %
+              </div>
+              {/* Headshot Progress Bar */}
+              <div className={`
+                w-full h-1.5 rounded-full mt-2 overflow-hidden
+                ${isDarkMode ? 'bg-slate-700/80' : 'bg-gray-300/80'}
+              `}>
+                <div
+                  className={`
+                    h-full transition-all duration-1000 rounded-full
+                    ${headshotPercentage >= 50 
+                      ? 'bg-gradient-to-r from-green-500 to-green-400' 
+                      : headshotPercentage >= 25 
+                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-400' 
+                        : 'bg-gradient-to-r from-red-500 to-red-400'
+                    }
+                  `}
+                  style={{ width: `${Math.min(headshotPercentage, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Win Rate */}
+            <div className="text-center">
+              <div className={`text-2xl font-bold mb-1 ${
+                winRate === 100 ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {winRate}%
+              </div>
+              <div className={`text-xs ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Win Rate
+              </div>
+              {/* Win Rate Progress Bar */}
+              <div className={`
+                w-full h-1.5 rounded-full mt-2 overflow-hidden
+                ${isDarkMode ? 'bg-slate-700/80' : 'bg-gray-300/80'}
+              `}>
+                <div
+                  className={`
+                    h-full transition-all duration-1000 rounded-full
+                    ${winRate === 100 
+                      ? 'bg-gradient-to-r from-green-500 to-green-400' 
+                      : 'bg-gradient-to-r from-red-500 to-red-400'
+                    }
+                  `}
+                  style={{ width: `${winRate}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
