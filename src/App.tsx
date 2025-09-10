@@ -21,9 +21,6 @@ import { supabase } from './services/supabaseClient';
 import { EmergencyMOTDService, EmergencyMOTD } from './services/emergencyMOTDService';
 import { EmergencyMOTD as EmergencyMOTDComponent } from './components/EmergencyMOTD';
 
-// DeathmatchGrid is imported from TeamSection
-import { MyTeamSection, EnemyTeamSection, DeathmatchGrid } from './components/TeamSection';
-
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
