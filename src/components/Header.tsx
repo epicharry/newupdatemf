@@ -153,7 +153,8 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex flex-col space-y-3 items-end">
               {/* App Controls Group */}
               <div className={`
-                rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300
+                rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300 hover:scale-105
+                hover:shadow-xl group
                 ${isDarkMode 
                   ? 'bg-slate-900/30 border-slate-700/50' 
                   : 'bg-white/15 border-gray-300/40'
@@ -239,7 +240,8 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Match Features Group */}
               {(showMatchHistoryButton || showAnalysisButton) && (
                 <div className={`
-                  rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300
+                  rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300 hover:scale-105
+                  hover:shadow-xl group
                   ${isDarkMode 
                     ? 'bg-slate-900/30 border-slate-700/50' 
                     : 'bg-white/15 border-gray-300/40'
