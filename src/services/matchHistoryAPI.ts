@@ -76,16 +76,25 @@ function setCachedData<T>(cache: Map<string, { data: T; timestamp: number }>, ke
 
 export class MatchHistoryAPI {
   private tokens: ValorantTokens | null = null;
+  private lastTokenRefresh: number = 0;
+  private readonly TOKEN_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
   private region: string = DEFAULT_REGION;
   private shard: string = DEFAULT_SHARD;
 
   constructor(tokens: ValorantTokens, region?: string, shard?: string) {
     this.tokens = tokens;
+    this.lastTokenRefresh = Date.now();
     if (region) this.region = region;
     if (shard) this.shard = shard;
   }
 
   private getHeaders(): Record<string, string> {
+    // Check if tokens need refresh
+    const now = Date.now();
+    if (!this.tokens || (now - this.lastTokenRefresh) > this.TOKEN_REFRESH_INTERVAL) {
+      throw new Error('Tokens expired - need refresh');
+    }
+    
     if (!this.tokens) {
       throw new Error('Tokens not available');
     }
@@ -111,31 +120,41 @@ export class MatchHistoryAPI {
         
         return response;
       } catch (error) {
+        const errorStr = error.toString();
+        
         // Check if it's a rate limit error
-        if (error.toString().includes('429')) {
+        if (errorStr.includes('429')) {
           console.warn('Rate limited, backing off...');
           // Wait longer for rate limit errors
           await new Promise(resolve => setTimeout(resolve, 5000));
           throw new Error('Rate limited - please wait before making more requests');
         }
         
-        // If request fails, try refreshing tokens once
-        console.warn('Match history request failed, attempting token refresh:', error);
-        
-        // Re-fetch tokens
-        try {
-          this.tokens = await window.electronAPI.fetchTokens();
-          const headers = this.getHeaders();
+        // Check if it's an auth error or token expiration
+        if (errorStr.includes('401') || errorStr.includes('403') || 
+            errorStr.includes('Unauthorized') || errorStr.includes('Tokens expired')) {
+          console.warn('Auth error detected, need fresh tokens:', error);
           
-          return await window.electronAPI.makeRequest({
-            url,
-            headers,
-            ...options
-          });
-        } catch (retryError) {
-          console.error('Token refresh and retry failed:', retryError);
-          throw error; // Throw original error
+          // Re-fetch tokens from the main process
+          try {
+            this.tokens = await window.electronAPI.fetchTokens();
+            this.lastTokenRefresh = Date.now();
+            console.log('Tokens refreshed for match history API');
+            
+            const headers = this.getHeaders();
+            return await window.electronAPI.makeRequest({
+              url,
+              headers,
+              ...options
+            });
+          } catch (retryError) {
+            console.error('Token refresh and retry failed:', retryError);
+            throw new Error('Authentication failed - please restart Valorant');
+          }
         }
+        
+        // For other errors, don't retry
+        throw error;
       }
     });
   }
@@ -458,6 +477,7 @@ export class MatchHistoryAPI {
 let matchHistoryAPI: MatchHistoryAPI | null = null;
 
 export const initializeMatchHistoryAPI = (tokens: ValorantTokens, region?: string, shard?: string) => {
+  console.log('Initializing match history API with fresh tokens');
   matchHistoryAPI = new MatchHistoryAPI(tokens, region, shard);
 };
 

@@ -6,7 +6,7 @@ import { RegionService } from './regionService';
 export class ValorantAPI {
   private tokens: ValorantTokens | null = null;
   private lastTokenFetch: number = 0;
-  private readonly TOKEN_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  private readonly TOKEN_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes - more frequent refresh
   private configService: ConfigService;
   private currentRegion: string = DEFAULT_REGION;
   private currentShard: string = DEFAULT_SHARD;
@@ -80,13 +80,22 @@ export class ValorantAPI {
 
   private async ensureValidTokens(): Promise<void> {
     const now = Date.now();
-    const shouldRefresh = !this.tokens || (now - this.lastTokenFetch) > this.TOKEN_REFRESH_INTERVAL;
+    // Always refresh tokens if they're older than 2 minutes OR if we get auth errors
+    const shouldRefresh = !this.tokens || 
+                         (now - this.lastTokenFetch) > this.TOKEN_REFRESH_INTERVAL ||
+                         this.lastTokenFetch === 0;
     
     if (shouldRefresh) {
       try {
+        console.log('Refreshing Riot tokens...');
         await this.fetchTokens();
+        console.log('Tokens refreshed successfully');
       } catch (error) {
-        console.warn('Token refresh failed, continuing with existing tokens:', error);
+        console.error('Token refresh failed:', error);
+        // Clear tokens on refresh failure to force re-fetch
+        this.tokens = null;
+        this.lastTokenFetch = 0;
+        throw error;
       }
     }
   }
@@ -112,6 +121,8 @@ export class ValorantAPI {
   }
 
   private async makeRequestWithRetry(url: string, options: any = {}): Promise<any> {
+    // Always ensure we have fresh tokens before making requests
+    await this.ensureValidTokens();
     let headers = await this.getHeaders();
     
     try {
@@ -123,16 +134,26 @@ export class ValorantAPI {
       
       return response;
     } catch (error) {
-      // If request fails, try refreshing tokens once
-      console.warn('Request failed, attempting token refresh:', error);
-      await this.fetchTokens();
-      headers = await this.getHeaders();
+      // If request fails with auth error, force token refresh and retry once
+      const errorStr = error.toString();
+      if (errorStr.includes('401') || errorStr.includes('403') || errorStr.includes('Unauthorized')) {
+        console.warn('Auth error detected, forcing token refresh:', error);
+        
+        // Force fresh token fetch
+        this.tokens = null;
+        this.lastTokenFetch = 0;
+        await this.ensureValidTokens();
+        headers = await this.getHeaders();
+        
+        return await window.electronAPI.makeRequest({
+          url,
+          headers,
+          ...options
+        });
+      }
       
-      return await window.electronAPI.makeRequest({
-        url,
-        headers,
-        ...options
-      });
+      // For other errors, don't retry
+      throw error;
     }
   }
 

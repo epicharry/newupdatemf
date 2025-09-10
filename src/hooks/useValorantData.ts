@@ -44,7 +44,9 @@ export const useValorantData = () => {
       // Try to fetch tokens if not connected
       if (!isConnected) {
         try {
+          console.log('Fetching fresh tokens...');
           await apiRef.current.fetchTokens();
+          console.log('Tokens fetched successfully');
         } catch (error) {
           // Don't retry immediately on rate limit errors
           if (error.toString().includes('429')) {
@@ -60,9 +62,22 @@ export const useValorantData = () => {
         if (tokens) {
           const region = apiRef.current.getCurrentRegion();
           const shard = apiRef.current.getCurrentShard();
+          console.log('Reinitializing match history API with fresh tokens');
           initializeMatchHistoryAPI(tokens, region, shard);
         }
         setIsConnected(true);
+      } else {
+        // Even if connected, ensure match history API has fresh tokens
+        try {
+          const tokens = await apiRef.current.getTokens();
+          if (tokens) {
+            const region = apiRef.current.getCurrentRegion();
+            const shard = apiRef.current.getCurrentShard();
+            initializeMatchHistoryAPI(tokens, region, shard);
+          }
+        } catch (error) {
+          console.warn('Failed to refresh match history API tokens:', error);
+        }
       }
       
       const data = await apiRef.current.getMatchData();
