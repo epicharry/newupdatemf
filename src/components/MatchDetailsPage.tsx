@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Crown, Target, Clock, Users, Moon, Sun, Activity, Bomb, Shield, Zap, Skull } from 'lucide-react';
-import { MatchDetails, MatchPlayer } from '../types/matchHistory';
+import { ArrowLeft, Crown, Target, Clock, Users, Moon, Sun, Activity, Bomb, Shield, Zap, Skull, DollarSign } from 'lucide-react';
+import { MatchDetails, MatchPlayer, RoundEconomy } from '../types/matchHistory';
 import { AGENTS, RANKS } from '../constants/valorant';
 import { MAPS } from '../constants/maps';
 import { WEAPONS } from '../constants/weapons';
@@ -32,7 +32,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
   isDarkMode,
   onToggleDarkMode,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'timeline'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'economy'>('overview');
   
   const mapInfo = MAPS[matchDetails.matchInfo.mapId] || { 
     name: 'Unknown Map', 
@@ -218,11 +218,12 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
           <div className="flex space-x-2 mb-6">
             {[
               { id: 'overview', label: 'Overview', icon: Users },
-              { id: 'timeline', label: 'Timeline', icon: Activity }
+              { id: 'timeline', label: 'Timeline', icon: Activity },
+              { id: 'economy', label: 'Economy', icon: DollarSign }
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
-                onClick={() => setActiveTab(id as any)}
+                onClick={() => setActiveTab(id as 'overview' | 'timeline' | 'economy')}
                 className={`
                   flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all duration-300
                   backdrop-blur-sm border hover:scale-105 active:scale-95
@@ -276,6 +277,15 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
         {activeTab === 'timeline' && (
           <MatchTimeline
             timelineData={timelineData}
+            allPlayers={[...myTeam, ...enemyTeam]}
+            myTeamId={myTeamId}
+            isDarkMode={isDarkMode}
+          />
+        )}
+
+        {activeTab === 'economy' && (
+          <EconomyTab
+            matchDetails={matchDetails}
             allPlayers={[...myTeam, ...enemyTeam]}
             myTeamId={myTeamId}
             isDarkMode={isDarkMode}
@@ -693,6 +703,284 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
           )}
         </div>
       ))}
+    </div>
+  );
+};
+
+interface EconomyTabProps {
+  matchDetails: MatchDetails;
+  allPlayers: MatchPlayer[];
+  myTeamId: string;
+  isDarkMode: boolean;
+}
+
+const EconomyTab: React.FC<EconomyTabProps> = ({
+  matchDetails,
+  allPlayers,
+  myTeamId,
+  isDarkMode
+}) => {
+  const getPlayerName = (puuid: string) => {
+    const player = allPlayers.find(p => p.subject === puuid);
+    return player ? `${player.gameName}#${player.tagLine}` : 'Unknown';
+  };
+
+  const getPlayerAgent = (puuid: string) => {
+    const player = allPlayers.find(p => p.subject === puuid);
+    return player ? AGENTS[player.characterId] || 'Unknown' : 'Unknown';
+  };
+
+  const getWeaponName = (weaponId: string) => {
+    return WEAPONS[weaponId] || 'Unknown Weapon';
+  };
+
+  const getArmorName = (armorValue: number) => {
+    if (armorValue === 0) return 'No Armor';
+    if (armorValue <= 25) return 'Light Armor';
+    if (armorValue <= 50) return 'Heavy Armor';
+    return 'Full Armor';
+  };
+
+  const formatCredits = (amount: number) => {
+    return amount.toLocaleString();
+  };
+
+  // Mock economy data since it might not be available in all match details
+  // In a real implementation, this would come from matchDetails.rounds
+  const economyData = matchDetails.rounds || [];
+
+  // If no economy data available, show a message
+  if (economyData.length === 0) {
+    return (
+      <div className={`
+        rounded-2xl p-8 backdrop-blur-xl border text-center transition-all duration-300
+        ${isDarkMode 
+          ? 'bg-slate-900/40 border-slate-700/50' 
+          : 'bg-white/20 border-white/30'
+        }
+      `}>
+        <DollarSign className={`w-12 h-12 mx-auto mb-4 ${
+          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+        }`} />
+        <h3 className={`text-xl font-semibold mb-2 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          Economy Data Not Available
+        </h3>
+        <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Economy information is not available for this match. This feature requires detailed match data that may not be present in older matches.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {economyData.map((roundEconomy) => (
+        <div
+          key={roundEconomy.round}
+          className={`
+            rounded-2xl p-6 backdrop-blur-xl border transition-all duration-300
+            ${isDarkMode 
+              ? 'bg-slate-900/40 border-slate-700/50' 
+              : 'bg-white/20 border-white/30'
+            }
+          `}
+        >
+          {/* Round Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className={`
+                px-3 py-1 rounded-full text-sm font-bold
+                ${isDarkMode 
+                  ? 'bg-green-600/20 border border-green-500/30 text-green-400' 
+                  : 'bg-green-500/15 border border-green-400/30 text-green-700'
+                }
+              `}>
+                Round {roundEconomy.round + 1}
+              </div>
+              <h3 className={`text-lg font-semibold ${
+                isDarkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Economy Overview
+              </h3>
+            </div>
+            
+            <div className="flex items-center space-x-1 text-green-500">
+              <DollarSign className="w-4 h-4" />
+              <span className="text-sm font-medium">Buy Phase</span>
+            </div>
+          </div>
+
+          {/* Team Sections */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* My Team */}
+            <div className={`
+              rounded-xl p-4 backdrop-blur-sm border
+              ${isDarkMode 
+                ? 'bg-blue-600/10 border-blue-500/30' 
+                : 'bg-blue-500/10 border-blue-400/30'
+              }
+            `}>
+              <h4 className={`text-sm font-semibold mb-3 ${
+                isDarkMode ? 'text-blue-300' : 'text-blue-700'
+              }`}>
+                Your Team
+              </h4>
+              <div className="space-y-2">
+                {roundEconomy.playerEconomies
+                  .filter(pe => allPlayers.find(p => p.subject === pe.subject)?.teamId === myTeamId)
+                  .map((playerEcon) => (
+                    <PlayerEconomyCard
+                      key={playerEcon.subject}
+                      playerEconomy={playerEcon}
+                      playerName={getPlayerName(playerEcon.subject)}
+                      playerAgent={getPlayerAgent(playerEcon.subject)}
+                      getWeaponName={getWeaponName}
+                      getArmorName={getArmorName}
+                      formatCredits={formatCredits}
+                      isDarkMode={isDarkMode}
+                    />
+                  ))}
+              </div>
+            </div>
+
+            {/* Enemy Team */}
+            <div className={`
+              rounded-xl p-4 backdrop-blur-sm border
+              ${isDarkMode 
+                ? 'bg-red-600/10 border-red-500/30' 
+                : 'bg-red-500/10 border-red-400/30'
+              }
+            `}>
+              <h4 className={`text-sm font-semibold mb-3 ${
+                isDarkMode ? 'text-red-300' : 'text-red-700'
+              }`}>
+                Enemy Team
+              </h4>
+              <div className="space-y-2">
+                {roundEconomy.playerEconomies
+                  .filter(pe => allPlayers.find(p => p.subject === pe.subject)?.teamId !== myTeamId)
+                  .map((playerEcon) => (
+                    <PlayerEconomyCard
+                      key={playerEcon.subject}
+                      playerEconomy={playerEcon}
+                      playerName={getPlayerName(playerEcon.subject)}
+                      playerAgent={getPlayerAgent(playerEcon.subject)}
+                      getWeaponName={getWeaponName}
+                      getArmorName={getArmorName}
+                      formatCredits={formatCredits}
+                      isDarkMode={isDarkMode}
+                    />
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+interface PlayerEconomyCardProps {
+  playerEconomy: any;
+  playerName: string;
+  playerAgent: string;
+  getWeaponName: (weaponId: string) => string;
+  getArmorName: (armorValue: number) => string;
+  formatCredits: (amount: number) => string;
+  isDarkMode: boolean;
+}
+
+const PlayerEconomyCard: React.FC<PlayerEconomyCardProps> = ({
+  playerEconomy,
+  playerName,
+  playerAgent,
+  getWeaponName,
+  getArmorName,
+  formatCredits,
+  isDarkMode
+}) => {
+  return (
+    <div className={`
+      p-3 rounded-lg backdrop-blur-sm border transition-all duration-300
+      ${isDarkMode 
+        ? 'bg-slate-800/40 border-slate-700/50' 
+        : 'bg-white/20 border-white/30'
+      }
+    `}>
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className={`font-medium text-sm ${
+            isDarkMode ? 'text-white' : 'text-gray-800'
+          }`}>
+            {playerName}
+          </div>
+          <div className={`text-xs ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>
+            {playerAgent}
+          </div>
+        </div>
+        
+        <div className="text-right">
+          <div className={`text-sm font-semibold ${
+            isDarkMode ? 'text-green-400' : 'text-green-600'
+          }`}>
+            {formatCredits(playerEconomy.remaining)} credits
+          </div>
+          <div className={`text-xs ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>
+            Spent: {formatCredits(playerEconomy.spent)}
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center space-x-2">
+          <span className={`px-2 py-1 rounded-full ${
+            isDarkMode 
+              ? 'bg-slate-700/50 text-gray-300' 
+              : 'bg-gray-200/50 text-gray-600'
+          }`}>
+            🔫 {getWeaponName(playerEconomy.weapon)}
+          </span>
+          <span className={`px-2 py-1 rounded-full ${
+            isDarkMode 
+              ? 'bg-slate-700/50 text-gray-300' 
+              : 'bg-gray-200/50 text-gray-600'
+          }`}>
+            🛡️ {getArmorName(playerEconomy.armor)}
+          </span>
+        </div>
+        
+        <div className={`text-xs ${
+          isDarkMode ? 'text-gray-500' : 'text-gray-500'
+        }`}>
+          Value: {formatCredits(playerEconomy.loadoutValue)}
+        </div>
+      </div>
+      
+      {/* Equipment */}
+      {Object.keys(playerEconomy.equipment || {}).length > 0 && (
+        <div className="mt-2 pt-2 border-t border-gray-300/20">
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(playerEconomy.equipment || {}).map(([item, count]) => (
+              <span
+                key={item}
+                className={`text-xs px-2 py-1 rounded-full ${
+                  isDarkMode 
+                    ? 'bg-purple-600/20 text-purple-400' 
+                    : 'bg-purple-500/15 text-purple-700'
+                }`}
+              >
+                {getWeaponName(item)} {count > 1 && `x${count}`}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -17,6 +17,7 @@ export interface MatchDetails {
   players: MatchPlayer[];
   teams: MatchTeam[];
   roundResults: RoundResult[];
+  rounds?: RoundEconomy[];
 }
 
 export interface MatchPlayer {
@@ -76,6 +77,23 @@ export interface Kill {
     isSecondaryFireMode: boolean;
   };
   damage?: number;
+}
+
+export interface RoundEconomy {
+  round: number;
+  playerEconomies: PlayerEconomy[];
+}
+
+export interface PlayerEconomy {
+  subject: string;
+  loadoutValue: number;
+  weapon: string;
+  armor: number;
+  remaining: number;
+  spent: number;
+  equipment: {
+    [key: string]: number;
+  };
 }
 
 export interface RoundStats {
