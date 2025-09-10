@@ -21,6 +21,7 @@ interface HeaderProps {
   showAnalysisButton?: boolean;
   refreshCooldown?: number;
   currentUser?: { name: string } | null;
+  onViewPlayerSearch?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -42,7 +43,8 @@ export const Header: React.FC<HeaderProps> = ({
   onViewAnalysis,
   showAnalysisButton = false,
   refreshCooldown = 0,
-  currentUser = null
+  currentUser = null,
+  onViewPlayerSearch
 }) => {
   const getStatusIcon = () => {
     if (status.includes('Agent Select')) {
@@ -239,7 +241,7 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
 
               {/* Match Features Group */}
-              {(showMatchHistoryButton || showAnalysisButton) && (
+              {(showMatchHistoryButton || showAnalysisButton || onViewPlayerSearch) && (
                 <div className={`
                   rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300 hover:scale-105
                   hover:shadow-xl group
@@ -254,6 +256,24 @@ export const Header: React.FC<HeaderProps> = ({
                     MATCH FEATURES
                   </div>
                   <div className="flex items-center justify-center space-x-2">
+                    {/* Player Search Button */}
+                    {onViewPlayerSearch && (
+                      <button
+                        onClick={onViewPlayerSearch}
+                        className={`
+                          flex items-center space-x-1 px-2 py-1.5 rounded-lg backdrop-blur-sm border transition-all duration-300
+                          hover:scale-105 active:scale-95 text-sm font-medium
+                          ${isDarkMode 
+                            ? 'bg-slate-800/40 border-slate-700/50 text-purple-400 hover:bg-slate-800/60' 
+                            : 'bg-white/20 border-white/30 text-purple-700 hover:bg-white/30'
+                          }
+                        `}
+                      >
+                        <Users className="w-4 h-4" />
+                        <span>Player Search</span>
+                      </button>
+                    )}
+                    
                     {/* Match History Button */}
                     {showMatchHistoryButton && onViewMatchHistory && (
                       <button

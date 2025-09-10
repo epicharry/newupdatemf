@@ -7,6 +7,7 @@ import { SuggestionsPage } from './components/SuggestionsPage';
 import { AnalysisPage } from './components/AnalysisPage';
 import { MaintenanceScreen } from './components/MaintenanceScreen';
 import { BannedScreen } from './components/BannedScreen';
+import { PlayerSearchPage } from './components/PlayerSearchPage';
 import { Footer } from './components/Footer';
 import { UpdateModal } from './components/UpdateModal';
 import { EmergencyMOTD } from './components/EmergencyMOTD';
@@ -27,7 +28,7 @@ function App() {
   });
 
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerInfo | null>(null);
-  const [currentView, setCurrentView] = useState<'main' | 'match-history' | 'faq' | 'suggestions' | 'analysis'>('main');
+  const [currentView, setCurrentView] = useState<'main' | 'match-history' | 'faq' | 'suggestions' | 'analysis' | 'player-search'>('main');
   const [currentUser, setCurrentUser] = useState<PlayerInfo | null>(null);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState('');
@@ -309,6 +310,14 @@ function App() {
     setCurrentView('main');
   };
 
+  const handleViewPlayerSearch = () => {
+    setCurrentView('player-search');
+  };
+
+  const handleBackFromPlayerSearch = () => {
+    setCurrentView('main');
+  };
+
   const handleRefreshWithCooldown = () => {
     if (refreshCooldown > 0) return;
     
@@ -466,6 +475,17 @@ function App() {
     );
   }
 
+  // Show player search page
+  if (currentView === 'player-search') {
+    return (
+      <PlayerSearchPage
+        onBack={handleBackFromPlayerSearch}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+      />
+    );
+  }
+
   return (
     <div className={`min-h-screen transition-all duration-500 ${
       isDarkMode 
@@ -494,6 +514,7 @@ function App() {
           showAnalysisButton={isConnected && matchDetected && (myTeamPlayers.length > 0 || enemyTeamPlayers.length > 0)}
           refreshCooldown={refreshCooldown}
           currentUser={currentUser}
+          onViewPlayerSearch={handleViewPlayerSearch}
         />
 
         {/* Emergency MOTD */}
