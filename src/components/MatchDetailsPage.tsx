@@ -401,31 +401,40 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
       </div>
 
       {/* Party Information */}
-      {parties.length > 0 && (
-        <div className="mb-6">
-          <div className={`text-sm font-medium mb-3 ${
-            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+      {/* Party Information - Fixed height container */}
+      <div className="mb-6 min-h-[60px] flex flex-col justify-center">
+        {parties.length > 0 ? (
+          <>
+            <div className={`text-sm font-medium mb-3 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Party Information:
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {parties.map((party, index) => (
+                <div
+                  key={index}
+                  className={`
+                    px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border
+                    ${isDarkMode 
+                      ? 'bg-purple-600/20 border-purple-500/30 text-purple-300' 
+                      : 'bg-purple-500/15 border-purple-400/30 text-purple-700'
+                    }
+                  `}
+                >
+                  👥 {getPartyLabel(party.length)}: {party.map(p => p.gameName).join(', ')}
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className={`text-sm text-center ${
+            isDarkMode ? 'text-gray-500' : 'text-gray-400'
           }`}>
-            Party Information:
+            All players solo queued
           </div>
-          <div className="flex flex-wrap gap-2">
-            {parties.map((party, index) => (
-              <div
-                key={index}
-                className={`
-                  px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border
-                  ${isDarkMode 
-                    ? 'bg-purple-600/20 border-purple-500/30 text-purple-300' 
-                    : 'bg-purple-500/15 border-purple-400/30 text-purple-700'
-                  }
-                `}
-              >
-                👥 {getPartyLabel(party.length)}: {party.map(p => p.gameName).join(', ')}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
       {/* Players */}
       <div className="space-y-3">
         {sortedPlayers.map((player) => (
