@@ -23,12 +23,12 @@ import { useTheme } from './hooks/useTheme';
 
 function App() {
   const { 
-    themeConfig, 
-    setThemeMode, 
-    updateColors, 
-    setRandomColors, 
-    getThemeStyles, 
-    isDarkMode 
+    themeConfig,
+    setThemeMode,
+    setRandomTheme,
+    getThemeStyles,
+    isDarkMode,
+    getCurrentThemeName
   } = useTheme();
   
   const [showThemeSelector, setShowThemeSelector] = useState(false);
@@ -624,9 +624,9 @@ function App() {
         onClose={handleCloseThemeSelector}
         themeConfig={themeConfig}
         onThemeChange={setThemeMode}
-        onColorChange={updateColors}
-        onRandomColors={setRandomColors}
+        onRandomColors={setRandomTheme}
         isDarkMode={isDarkMode}
+        getCurrentThemeName={getCurrentThemeName}
       />
       
       {/* Update Modal */}

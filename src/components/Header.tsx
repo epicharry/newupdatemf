@@ -199,7 +199,10 @@ export const Header: React.FC<HeaderProps> = ({
                     }
                   `}
                 >
-                  <Palette className="w-4 h-4" />
+                  <div className="flex items-center space-x-1">
+                    <Palette className="w-4 h-4" />
+                    <span className="text-xs font-medium">Theme</span>
+                  </div>
                 </button>
               ) : (
                 <button
