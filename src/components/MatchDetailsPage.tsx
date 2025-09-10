@@ -252,7 +252,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
               : 'grid lg:grid-cols-2 gap-8'
           }`}>
             <TeamDetailsSection
-              title={matchDetails.matchInfo.queueID === 'deathmatch' ? 'All Players' : `Your Team (${myTeamId})`}
+              title={matchDetails.matchInfo.queueID === 'deathmatch' ? 'All Players' : 'Your Team'}
               players={myTeam}
               isMyTeam={true}
               isDarkMode={isDarkMode}
@@ -262,7 +262,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
             />
             {matchDetails.matchInfo.queueID !== 'deathmatch' && (
               <TeamDetailsSection
-                title={`Enemy Team (${enemyTeamId})`}
+                title="Enemy Team"
                 players={enemyTeam}
                 isMyTeam={false}
                 isDarkMode={isDarkMode}
