@@ -524,7 +524,8 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
       return 'Ultimate';
     }
     
-    return WEAPONS[weaponId] || 'Unknown Weapon';
+    // Try exact match first, then try lowercase
+    return WEAPONS[weaponId] || WEAPONS[weaponId.toLowerCase()] || 'Unknown Weapon';
   };
   
   return (
@@ -735,7 +736,8 @@ const EconomyTab: React.FC<EconomyTabProps> = ({
     // Handle empty weapon ID
     if (!weaponId) return 'No Weapon';
     
-    return WEAPONS[weaponId] || 'Unknown Weapon';
+    // Try exact match first, then try lowercase
+    return WEAPONS[weaponId] || WEAPONS[weaponId.toLowerCase()] || 'Unknown Weapon';
   };
 
   const getArmorName = (armorValue: number) => {
