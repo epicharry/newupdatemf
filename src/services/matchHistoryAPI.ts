@@ -7,6 +7,10 @@ export class MatchHistoryAPI {
   private tokens: ValorantTokens | null = null;
   private region: string = DEFAULT_REGION;
   private shard: string = DEFAULT_SHARD;
+  private requestQueue: Array<() => Promise<any>> = [];
+  private isProcessingQueue: boolean = false;
+  private lastRequestTime: number = 0;
+  private readonly REQUEST_DELAY = 1000; // 1 second between requests
 
   constructor(tokens: ValorantTokens, region?: string, shard?: string) {
     this.tokens = tokens;
@@ -28,35 +32,87 @@ export class MatchHistoryAPI {
     };
   }
 
-  private async makeRequestWithRetry(url: string, options: any = {}): Promise<any> {
-    try {
-      const headers = this.getHeaders();
-      const response = await window.electronAPI.makeRequest({
-        url,
-        headers,
-        ...options
+  private async queueRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.requestQueue.push(async () => {
+        try {
+          // Ensure minimum delay between requests
+          const now = Date.now();
+          const timeSinceLastRequest = now - this.lastRequestTime;
+          if (timeSinceLastRequest < this.REQUEST_DELAY) {
+            await new Promise(resolve => setTimeout(resolve, this.REQUEST_DELAY - timeSinceLastRequest));
+          }
+          
+          const result = await requestFn();
+          this.lastRequestTime = Date.now();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
       });
       
-      return response;
-    } catch (error) {
-      // If request fails, try refreshing tokens once
-      console.warn('Match history request failed, attempting token refresh:', error);
-      
-      // Re-fetch tokens
+      this.processQueue();
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue || this.requestQueue.length === 0) {
+      return;
+    }
+    
+    this.isProcessingQueue = true;
+    
+    while (this.requestQueue.length > 0) {
+      const request = this.requestQueue.shift();
+      if (request) {
+        try {
+          await request();
+        } catch (error) {
+          console.error('Queued request failed:', error);
+        }
+      }
+    }
+    
+    this.isProcessingQueue = false;
+  }
+
+  private async makeRequestWithRetry(url: string, options: any = {}): Promise<any> {
+    return this.queueRequest(async () => {
       try {
-        this.tokens = await window.electronAPI.fetchTokens();
         const headers = this.getHeaders();
-        
-        return await window.electronAPI.makeRequest({
+        const response = await window.electronAPI.makeRequest({
           url,
           headers,
           ...options
         });
-      } catch (retryError) {
-        console.error('Token refresh and retry failed:', retryError);
-        throw error; // Throw original error
+        
+        return response;
+      } catch (error) {
+        // Check if it's a rate limit error
+        if (error.toString().includes('429')) {
+          console.warn('Rate limited, waiting before retry...');
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+          throw error; // Don't retry immediately, let the queue handle it
+        }
+        
+        // If request fails, try refreshing tokens once
+        console.warn('Match history request failed, attempting token refresh:', error);
+        
+        try {
+          this.tokens = await window.electronAPI.fetchTokens();
+          const headers = this.getHeaders();
+          
+          return await window.electronAPI.makeRequest({
+            url,
+            headers,
+            ...options
+          });
+        } catch (retryError) {
+          console.error('Token refresh and retry failed:', retryError);
+          throw error; // Throw original error
+        }
       }
-    }
+    });
   }
 
   async getMatchHistory(puuid: string, startIndex: number = 0, endIndex: number = 20): Promise<MatchHistoryEntry[]> {
@@ -115,21 +171,55 @@ export class MatchHistoryAPI {
       const history = await this.getMatchHistory(puuid, 0, limit);
       const processedMatches: ProcessedMatch[] = [];
 
-      for (const historyEntry of history) {
-        // Get full match details for each match
-        const matchDetails = await this.getMatchDetails(historyEntry.MatchID);
-        if (matchDetails) {
-          const competitiveUpdates = await this.getCompetitiveUpdates(puuid);
-          const competitiveUpdate = competitiveUpdates.find(update => update.MatchID === historyEntry.MatchID);
-          
-          const processedMatch = this.processMatchData(matchDetails, puuid, competitiveUpdate);
-          if (processedMatch) {
-            processedMatches.push(processedMatch);
+      // Process matches in smaller batches to avoid rate limits
+      const batchSize = 3; // Process 3 matches at a time
+      for (let i = 0; i < history.length; i += batchSize) {
+        const batch = history.slice(i, i + batchSize);
+        
+        const batchPromises = batch.map(async (historyEntry) => {
+          try {
+            // Get full match details for each match
+            const matchDetails = await this.getMatchDetails(historyEntry.MatchID);
+            if (matchDetails) {
+              // Only get competitive updates for ranked matches
+              let competitiveUpdate = undefined;
+              if (matchDetails.matchInfo.isRanked) {
+                try {
+                  const competitiveUpdates = await this.getCompetitiveUpdates(puuid);
+                  competitiveUpdate = competitiveUpdates.find(update => update.MatchID === historyEntry.MatchID);
+                } catch (error) {
+                  console.warn('Failed to get competitive updates, continuing without RR data:', error);
+                }
+              }
+              
+              const processedMatch = this.processMatchData(matchDetails, puuid, competitiveUpdate);
+              return processedMatch;
+            }
+          } catch (error) {
+            console.error(`Failed to process match ${historyEntry.MatchID}:`, error);
+            return null;
           }
+        });
+        
+        const batchResults = await Promise.allSettled(batchPromises);
+        
+        batchResults.forEach(result => {
+          if (result.status === 'fulfilled' && result.value) {
+            processedMatches.push(result.value);
+          }
+        });
+        
+        // Add delay between batches
+        if (i + batchSize < history.length) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay between batches
         }
       }
 
       return processedMatches.sort((a, b) => b.gameStartTime - a.gameStartTime);
+    } catch (error) {
+      console.error('Failed to get processed match history:', error);
+      return [];
+    }
     } catch (error) {
       console.error('Failed to get processed match history:', error);
       return [];
