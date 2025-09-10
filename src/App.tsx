@@ -256,7 +256,6 @@ function App() {
     
     getCurrentUserInfo();
   }, [isConnected, currentUser, isInitializing, userDataCache]);
-  
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
@@ -641,6 +640,7 @@ function App() {
           currentUser={currentUser}
         />
 
+        {/* Teams Container */}
         {/* Emergency MOTD */}
         {emergencyMOTD && !motdDismissed && (
           <div className="max-w-6xl mx-auto mb-8">
@@ -652,41 +652,27 @@ function App() {
           </div>
         )}
 
-        {/* Teams Container */}
         {myTeamPlayers.length > 0 && (
-          <div className="max-w-6xl mx-auto">
-            {/* Check if this is deathmatch (all players in myTeam, no enemies) */}
-            {enemyTeamPlayers.length === 0 && myTeamPlayers.length > 5 ? (
-              /* Deathmatch Grid Layout */
-              <DeathmatchGrid
-                players={myTeamPlayers}
+          <div className={`max-w-6xl mx-auto ${
+            enemyTeamPlayers.length > 0 ? 'grid lg:grid-cols-2 gap-8' : 'max-w-3xl'
+          }`}>
+            <MyTeamSection
+              title="Your Team"
+              players={myTeamPlayers}
+              isMyTeam={true}
+              isDarkMode={isDarkMode}
+              onPlayerClick={handlePlayerClick}
+            />
+            
+            {/* Only show enemy team if there are enemy players (live match) */}
+            {enemyTeamPlayers.length > 0 && (
+              <EnemyTeamSection
+                title="Enemy Team"
+                players={enemyTeamPlayers}
+                isMyTeam={false}
                 isDarkMode={isDarkMode}
                 onPlayerClick={handlePlayerClick}
               />
-            ) : (
-              /* Normal Team Layout */
-              <div className={`${
-                enemyTeamPlayers.length > 0 ? 'grid lg:grid-cols-2 gap-8' : 'max-w-3xl mx-auto'
-              }`}>
-                <MyTeamSection
-                  title="Your Team"
-                  players={myTeamPlayers}
-                  isMyTeam={true}
-                  isDarkMode={isDarkMode}
-                  onPlayerClick={handlePlayerClick}
-                />
-                
-                {/* Only show enemy team if there are enemy players (live match) */}
-                {enemyTeamPlayers.length > 0 && (
-                  <EnemyTeamSection
-                    title="Enemy Team"
-                    players={enemyTeamPlayers}
-                    isMyTeam={false}
-                    isDarkMode={isDarkMode}
-                    onPlayerClick={handlePlayerClick}
-                  />
-                )}
-              </div>
             )}
           </div>
         )}
