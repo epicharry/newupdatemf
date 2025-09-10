@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { MyTeamSection, EnemyTeamSection } from './components/TeamSection';
+import { MyTeamSection, EnemyTeamSection, PlayerGridLayout } from './components/TeamSection';
 import { MatchHistoryPage } from './components/MatchHistoryPage';
 import { FAQPage } from './components/FAQPage';
 import { SuggestionsPage } from './components/SuggestionsPage';
@@ -652,29 +652,15 @@ function App() {
           </div>
         )}
 
+        {/* Always show players in grid layout */}
         {myTeamPlayers.length > 0 && (
-          <div className={`max-w-6xl mx-auto ${
-            enemyTeamPlayers.length > 0 ? 'grid lg:grid-cols-2 gap-8' : 'max-w-3xl'
-          }`}>
-            <MyTeamSection
-              title="Your Team"
-              players={myTeamPlayers}
-              isMyTeam={true}
-              isDarkMode={isDarkMode}
-              onPlayerClick={handlePlayerClick}
-            />
-            
-            {/* Only show enemy team if there are enemy players (live match) */}
-            {enemyTeamPlayers.length > 0 && (
-              <EnemyTeamSection
-                title="Enemy Team"
-                players={enemyTeamPlayers}
-                isMyTeam={false}
-                isDarkMode={isDarkMode}
-                onPlayerClick={handlePlayerClick}
-              />
-            )}
-          </div>
+          <PlayerGridLayout
+            allPlayers={myTeamPlayers}
+            enemyPlayers={enemyTeamPlayers}
+            isDarkMode={isDarkMode}
+            onPlayerClick={handlePlayerClick}
+            currentUserPuuid={currentUser?.puuid}
+          />
         )}
 
         {/* No Match State */}

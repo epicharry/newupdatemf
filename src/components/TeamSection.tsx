@@ -115,3 +115,78 @@ export const MyTeamSection: React.FC<Omit<TeamSectionProps, 'icon'>> = (props) =
 export const EnemyTeamSection: React.FC<Omit<TeamSectionProps, 'icon'>> = (props) => (
   <TeamSection {...props} icon={<Sword className="w-6 h-6" />} />
 );
+
+// New component for grid layout that works for all game modes
+interface PlayerGridLayoutProps {
+  allPlayers: PlayerInfo[];
+  enemyPlayers: PlayerInfo[];
+  isDarkMode: boolean;
+  onPlayerClick?: (player: PlayerInfo) => void;
+  currentUserPuuid?: string;
+}
+
+export const PlayerGridLayout: React.FC<PlayerGridLayoutProps> = ({
+  allPlayers,
+  enemyPlayers,
+  isDarkMode,
+  onPlayerClick,
+  currentUserPuuid
+}) => {
+  // Check if this is a team-based mode (has enemy players) or free-for-all (like Deathmatch)
+  const isTeamMode = enemyPlayers.length > 0;
+  
+  if (isTeamMode) {
+    // Normal team vs team layout
+    return (
+      <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8">
+        <MyTeamSection
+          title="Your Team"
+          players={allPlayers}
+          isMyTeam={true}
+          isDarkMode={isDarkMode}
+          onPlayerClick={onPlayerClick}
+        />
+        <EnemyTeamSection
+          title="Enemy Team"
+          players={enemyPlayers}
+          isMyTeam={false}
+          isDarkMode={isDarkMode}
+          onPlayerClick={onPlayerClick}
+        />
+      </div>
+    );
+  } else {
+    // Free-for-all mode (like Deathmatch) - split players into two columns
+    const sortedPlayers = [...allPlayers].sort((a, b) => {
+      // Put current user first
+      if (a.puuid === currentUserPuuid) return -1;
+      if (b.puuid === currentUserPuuid) return 1;
+      return 0;
+    });
+    
+    const midPoint = Math.ceil(sortedPlayers.length / 2);
+    const leftPlayers = sortedPlayers.slice(0, midPoint);
+    const rightPlayers = sortedPlayers.slice(midPoint);
+    
+    return (
+      <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8">
+        <TeamSection
+          title={`Players (${leftPlayers.length})`}
+          players={leftPlayers}
+          isMyTeam={true}
+          icon={<Users className="w-6 h-6" />}
+          isDarkMode={isDarkMode}
+          onPlayerClick={onPlayerClick}
+        />
+        <TeamSection
+          title={`Players (${rightPlayers.length})`}
+          players={rightPlayers}
+          isMyTeam={false}
+          icon={<Users className="w-6 h-6" />}
+          isDarkMode={isDarkMode}
+          onPlayerClick={onPlayerClick}
+        />
+      </div>
+    );
+  }
+};
