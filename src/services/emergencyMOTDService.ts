@@ -32,16 +32,9 @@ export class EmergencyMOTDService {
         .eq('show_on_main', true)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        // If no enabled MOTD found, that's expected
-        if (error.code === 'PGRST116') {
-          this.cachedMOTD = null;
-          this.lastCheck = now;
-          return null;
-        }
-        
         console.error('Failed to fetch emergency MOTD:', error);
         throw new Error(`Database error: ${error.message}`);
       }
