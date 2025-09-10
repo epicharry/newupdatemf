@@ -417,17 +417,6 @@ function App() {
         />
       </div>
 
-      {/* Welcome Message */}
-      {currentUser && !isLoading && (
-        <div className="text-center mb-6">
-          <h2 className={`text-xl font-semibold ${
-            isDarkMode ? 'text-blue-300' : 'text-blue-700'
-          }`}>
-            Welcome back, {currentUser.name.split('#')[0]}!
-          </h2>
-        </div>
-      )}
-
       <div className="relative z-10 container mx-auto px-6 py-8">
         <Header 
           status={status}
