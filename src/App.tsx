@@ -9,6 +9,11 @@ import { MaintenanceScreen } from './components/MaintenanceScreen';
 import { BannedScreen } from './components/BannedScreen';
 import { Footer } from './components/Footer';
 import { UpdateModal } from './components/UpdateModal';
+
+function App() {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : true;
   });
 
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerInfo | null>(null);
@@ -331,10 +336,6 @@ import { UpdateModal } from './components/UpdateModal';
           ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
           : 'bg-gradient-to-br from-red-50 via-white to-red-50'
       }`}>
-        isDarkMode 
-          ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
-          : 'bg-gradient-to-br from-red-50 via-white to-red-50'
-      }`}>
         <div className="text-center max-w-md mx-auto px-6">
           <div className="text-6xl mb-4">🔒</div>
           <h1 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
@@ -452,10 +453,6 @@ import { UpdateModal } from './components/UpdateModal';
 
   return (
     <div className={`min-h-screen transition-all duration-500 ${
-      isDarkMode 
-        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
-        : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
-    }`}>
       isDarkMode 
         ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
         : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
@@ -630,6 +627,7 @@ import { UpdateModal } from './components/UpdateModal';
           showAnalysisButton={isConnected && matchDetected && (myTeamPlayers.length > 0 || enemyTeamPlayers.length > 0)}
           refreshCooldown={refreshCooldown}
           currentUser={currentUser}
+        />
 
         {/* Teams Container */}
         {/* Emergency MOTD */}
@@ -639,7 +637,7 @@ import { UpdateModal } from './components/UpdateModal';
               motd={emergencyMOTD}
               onDismiss={handleDismissMOTD}
               isDarkMode={isDarkMode}
-              isDarkMode={isDarkMode}
+            />
           </div>
         )}
 
@@ -686,7 +684,6 @@ import { UpdateModal } from './components/UpdateModal';
               Connecting to Riot Client
             </h2>
             <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-            <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
               Please make sure Valorant is running...
             </p>
           </div>
@@ -706,7 +703,20 @@ import { UpdateModal } from './components/UpdateModal';
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span>Searching for matches...</span>
             </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Footer */}
+      <Footer isDarkMode={isDarkMode} />
+      
+      {/* Update Modal */}
+      <UpdateModal
+        isOpen={showUpdateModal}
+        onClose={handleCloseUpdateModal}
         isDarkMode={isDarkMode}
+      />
+    </div>
   );
 }
 
