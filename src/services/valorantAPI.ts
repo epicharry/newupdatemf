@@ -14,7 +14,7 @@ export class ValorantAPI {
   private startingSide: string = '';
   private rankCache: Map<string, { rank: RankInfo; timestamp: number }> = new Map();
   private nameCache: Map<string, { names: Record<string, string>; timestamp: number }> = new Map();
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private readonly CACHE_DURATION = 10 * 60 * 1000; // Increased to 10 minutes to reduce API calls
 
   constructor() {
     this.configService = new ConfigService();

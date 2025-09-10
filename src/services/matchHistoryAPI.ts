@@ -3,6 +3,77 @@ import { MatchHistoryEntry, MatchDetails, ProcessedMatch, CompetitiveUpdate } fr
 import { CLIENT_PLATFORM, CLIENT_VERSION, DEFAULT_REGION, DEFAULT_SHARD, AGENTS, RANKS } from '../constants/valorant';
 import { MAPS, QUEUE_TYPES } from '../constants/maps';
 
+// Rate limiting configuration
+const RATE_LIMIT_CONFIG = {
+  maxRequestsPerSecond: 2, // Conservative rate limit
+  requestQueue: [] as Array<() => Promise<any>>,
+  isProcessing: false,
+  lastRequestTime: 0
+};
+
+// Cache configuration
+const CACHE_CONFIG = {
+  matchDetails: new Map<string, { data: MatchDetails; timestamp: number }>(),
+  competitiveUpdates: new Map<string, { data: CompetitiveUpdate[]; timestamp: number }>(),
+  processedMatches: new Map<string, { data: ProcessedMatch[]; timestamp: number }>(),
+  cacheDuration: 5 * 60 * 1000 // 5 minutes
+};
+
+// Rate limiting helper
+async function rateLimitedRequest<T>(requestFn: () => Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    RATE_LIMIT_CONFIG.requestQueue.push(async () => {
+      try {
+        const result = await requestFn();
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
+    });
+    
+    processRequestQueue();
+  });
+}
+
+async function processRequestQueue() {
+  if (RATE_LIMIT_CONFIG.isProcessing || RATE_LIMIT_CONFIG.requestQueue.length === 0) {
+    return;
+  }
+  
+  RATE_LIMIT_CONFIG.isProcessing = true;
+  
+  while (RATE_LIMIT_CONFIG.requestQueue.length > 0) {
+    const now = Date.now();
+    const timeSinceLastRequest = now - RATE_LIMIT_CONFIG.lastRequestTime;
+    const minInterval = 1000 / RATE_LIMIT_CONFIG.maxRequestsPerSecond;
+    
+    if (timeSinceLastRequest < minInterval) {
+      await new Promise(resolve => setTimeout(resolve, minInterval - timeSinceLastRequest));
+    }
+    
+    const request = RATE_LIMIT_CONFIG.requestQueue.shift();
+    if (request) {
+      RATE_LIMIT_CONFIG.lastRequestTime = Date.now();
+      await request();
+    }
+  }
+  
+  RATE_LIMIT_CONFIG.isProcessing = false;
+}
+
+// Cache helper functions
+function getCachedData<T>(cache: Map<string, { data: T; timestamp: number }>, key: string): T | null {
+  const cached = cache.get(key);
+  if (cached && (Date.now() - cached.timestamp) < CACHE_CONFIG.cacheDuration) {
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedData<T>(cache: Map<string, { data: T; timestamp: number }>, key: string, data: T): void {
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
 export class MatchHistoryAPI {
   private tokens: ValorantTokens | null = null;
   private region: string = DEFAULT_REGION;
@@ -29,34 +100,44 @@ export class MatchHistoryAPI {
   }
 
   private async makeRequestWithRetry(url: string, options: any = {}): Promise<any> {
-    try {
-      const headers = this.getHeaders();
-      const response = await window.electronAPI.makeRequest({
-        url,
-        headers,
-        ...options
-      });
-      
-      return response;
-    } catch (error) {
-      // If request fails, try refreshing tokens once
-      console.warn('Match history request failed, attempting token refresh:', error);
-      
-      // Re-fetch tokens
+    return rateLimitedRequest(async () => {
       try {
-        this.tokens = await window.electronAPI.fetchTokens();
         const headers = this.getHeaders();
-        
-        return await window.electronAPI.makeRequest({
+        const response = await window.electronAPI.makeRequest({
           url,
           headers,
           ...options
         });
-      } catch (retryError) {
-        console.error('Token refresh and retry failed:', retryError);
-        throw error; // Throw original error
+        
+        return response;
+      } catch (error) {
+        // Check if it's a rate limit error
+        if (error.toString().includes('429')) {
+          console.warn('Rate limited, backing off...');
+          // Wait longer for rate limit errors
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          throw new Error('Rate limited - please wait before making more requests');
+        }
+        
+        // If request fails, try refreshing tokens once
+        console.warn('Match history request failed, attempting token refresh:', error);
+        
+        // Re-fetch tokens
+        try {
+          this.tokens = await window.electronAPI.fetchTokens();
+          const headers = this.getHeaders();
+          
+          return await window.electronAPI.makeRequest({
+            url,
+            headers,
+            ...options
+          });
+        } catch (retryError) {
+          console.error('Token refresh and retry failed:', retryError);
+          throw error; // Throw original error
+        }
       }
-    }
+    });
   }
 
   async getMatchHistory(puuid: string, startIndex: number = 0, endIndex: number = 20): Promise<MatchHistoryEntry[]> {
@@ -77,12 +158,20 @@ export class MatchHistoryAPI {
   }
 
   async getMatchDetails(matchId: string): Promise<MatchDetails | null> {
+    // Check cache first
+    const cached = getCachedData(CACHE_CONFIG.matchDetails, matchId);
+    if (cached) {
+      return cached;
+    }
+    
     try {
       const response = await this.makeRequestWithRetry(
         `https://pd.${this.region}.a.pvp.net/match-details/v1/matches/${matchId}`
       );
 
       if (response.status === 200) {
+        // Cache the result
+        setCachedData(CACHE_CONFIG.matchDetails, matchId, response.data);
         return response.data;
       }
       
@@ -94,12 +183,20 @@ export class MatchHistoryAPI {
   }
 
   async getCompetitiveUpdates(puuid: string): Promise<CompetitiveUpdate[]> {
+    // Check cache first
+    const cached = getCachedData(CACHE_CONFIG.competitiveUpdates, puuid);
+    if (cached) {
+      return cached;
+    }
+    
     try {
       const response = await this.makeRequestWithRetry(
         `https://pd.${this.region}.a.pvp.net/mmr/v1/players/${puuid}/competitiveupdates`
       );
 
       if (response.status === 200 && response.data?.Matches) {
+        // Cache the result
+        setCachedData(CACHE_CONFIG.competitiveUpdates, puuid, response.data.Matches);
         return response.data.Matches;
       }
       
@@ -111,15 +208,29 @@ export class MatchHistoryAPI {
   }
 
   async getProcessedMatchHistory(puuid: string, limit: number = 10): Promise<ProcessedMatch[]> {
+    // Check cache first
+    const cacheKey = `${puuid}-${limit}`;
+    const cached = getCachedData(CACHE_CONFIG.processedMatches, cacheKey);
+    if (cached) {
+      return cached;
+    }
+    
     try {
       const history = await this.getMatchHistory(puuid, 0, limit);
       const processedMatches: ProcessedMatch[] = [];
+
+      // Get competitive updates once for the user (not per match)
+      let competitiveUpdates: CompetitiveUpdate[] = [];
+      try {
+        competitiveUpdates = await this.getCompetitiveUpdates(puuid);
+      } catch (error) {
+        console.warn('Failed to fetch competitive updates, continuing without RR data:', error);
+      }
 
       for (const historyEntry of history) {
         // Get full match details for each match
         const matchDetails = await this.getMatchDetails(historyEntry.MatchID);
         if (matchDetails) {
-          const competitiveUpdates = await this.getCompetitiveUpdates(puuid);
           const competitiveUpdate = competitiveUpdates.find(update => update.MatchID === historyEntry.MatchID);
           
           const processedMatch = this.processMatchData(matchDetails, puuid, competitiveUpdate);
@@ -127,9 +238,19 @@ export class MatchHistoryAPI {
             processedMatches.push(processedMatch);
           }
         }
+        
+        // Add a small delay between match detail requests to avoid overwhelming the API
+        if (processedMatches.length < history.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
 
-      return processedMatches.sort((a, b) => b.gameStartTime - a.gameStartTime);
+      const sortedMatches = processedMatches.sort((a, b) => b.gameStartTime - a.gameStartTime);
+      
+      // Cache the result
+      setCachedData(CACHE_CONFIG.processedMatches, cacheKey, sortedMatches);
+      
+      return sortedMatches;
     } catch (error) {
       console.error('Failed to get processed match history:', error);
       return [];
@@ -141,8 +262,13 @@ export class MatchHistoryAPI {
       const matchDetails = await this.getMatchDetails(matchId);
       if (!matchDetails) return null;
 
-      const competitiveUpdates = await this.getCompetitiveUpdates(puuid);
-      const competitiveUpdate = competitiveUpdates.find(update => update.MatchID === matchId);
+      let competitiveUpdate: CompetitiveUpdate | undefined;
+      try {
+        const competitiveUpdates = await this.getCompetitiveUpdates(puuid);
+        competitiveUpdate = competitiveUpdates.find(update => update.MatchID === matchId);
+      } catch (error) {
+        console.warn('Failed to fetch competitive updates for match:', error);
+      }
       
       return this.processMatchData(matchDetails, puuid, competitiveUpdate);
     } catch (error) {

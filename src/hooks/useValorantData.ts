@@ -110,10 +110,11 @@ export const useValorantData = () => {
       const now = Date.now();
       const timeSinceLastRefresh = now - lastRefreshTime;
       
-      if (!matchDetected && timeSinceLastRefresh >= 5000) {
+      // Increased interval to reduce API pressure
+      if (!matchDetected && timeSinceLastRefresh >= 10000) {
         updateData();
       }
-    }, 5000);
+    }, 10000); // Increased from 5 seconds to 10 seconds
 
     return () => clearInterval(interval);
   }, [matchDetected, lastRefreshTime]);
@@ -122,8 +123,8 @@ export const useValorantData = () => {
     const now = Date.now();
     const timeSinceLastRefresh = now - lastRefreshTime;
     
-    // Enforce 10-second cooldown for manual refresh when match is detected
-    if (matchDetected && timeSinceLastRefresh < 10000) {
+    // Enforce 15-second cooldown for manual refresh when match is detected
+    if (matchDetected && timeSinceLastRefresh < 15000) {
       return;
     }
     
