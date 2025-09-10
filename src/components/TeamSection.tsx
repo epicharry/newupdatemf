@@ -33,7 +33,8 @@ export const TeamSection: React.FC<TeamSectionProps> = ({
   return (
     <div className="flex-1">
       <div className={`
-        rounded-3xl p-6 backdrop-blur-xl border transition-all duration-300
+        rounded-3xl p-6 backdrop-blur-xl border transition-all duration-300 hover:scale-[1.01]
+        hover:shadow-2xl group relative overflow-hidden
         ${isDarkMode 
           ? 'bg-slate-900/30 border-slate-700/50' 
           : 'bg-white/10 border-white/20'
@@ -43,10 +44,20 @@ export const TeamSection: React.FC<TeamSectionProps> = ({
           : (isDarkMode ? 'shadow-red-500/10' : 'shadow-red-400/20')
         }
       `}>
+        {/* Animated background glow */}
+        <div className={`
+          absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500
+          ${isMyTeam 
+            ? 'bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600' 
+            : 'bg-gradient-to-br from-red-500 via-pink-500 to-red-600'
+          }
+        `} />
+        
         {/* Team Header */}
-        <div className="flex items-center justify-center space-x-3 mb-6">
+        <div className="flex items-center justify-center space-x-3 mb-6 relative z-10">
           <div className={`
-            p-3 rounded-full backdrop-blur-sm transition-all duration-300
+            p-3 rounded-full backdrop-blur-sm transition-all duration-300 group-hover:scale-110
+            group-hover:rotate-12
             ${isMyTeam 
               ? (isDarkMode 
                   ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
@@ -61,7 +72,7 @@ export const TeamSection: React.FC<TeamSectionProps> = ({
             {icon}
           </div>
           <h2 className={`
-            text-xl font-bold
+            text-xl font-bold transition-all duration-300 group-hover:scale-105
             ${isMyTeam 
               ? (isDarkMode ? 'text-blue-300' : 'text-blue-700') 
               : (isDarkMode ? 'text-red-300' : 'text-red-700')
@@ -72,7 +83,7 @@ export const TeamSection: React.FC<TeamSectionProps> = ({
         </div>
         
         {/* Players */}
-        <div className="space-y-3">
+        <div className="space-y-3 relative z-10">
           {sortedPlayers.length > 0 ? (
             sortedPlayers.map((player) => (
               <PlayerCard

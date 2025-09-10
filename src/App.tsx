@@ -468,19 +468,154 @@ function App() {
         ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
         : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
     }`}>
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-30">
+      {/* Enhanced Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Floating Orbs */}
+        <div className="absolute inset-0">
+          {/* Large floating orb 1 */}
+          <div 
+            className={`absolute w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse ${
+              isDarkMode ? 'bg-blue-500' : 'bg-blue-400'
+            }`}
+            style={{
+              top: '10%',
+              left: '15%',
+              animation: 'float 20s ease-in-out infinite'
+            }}
+          />
+          
+          {/* Large floating orb 2 */}
+          <div 
+            className={`absolute w-80 h-80 rounded-full blur-3xl opacity-15 animate-pulse ${
+              isDarkMode ? 'bg-purple-500' : 'bg-purple-400'
+            }`}
+            style={{
+              top: '60%',
+              right: '10%',
+              animation: 'float 25s ease-in-out infinite reverse'
+            }}
+          />
+          
+          {/* Medium floating orb 3 */}
+          <div 
+            className={`absolute w-64 h-64 rounded-full blur-2xl opacity-25 animate-pulse ${
+              isDarkMode ? 'bg-cyan-500' : 'bg-cyan-400'
+            }`}
+            style={{
+              top: '30%',
+              right: '25%',
+              animation: 'float 18s ease-in-out infinite'
+            }}
+          />
+          
+          {/* Small floating orb 4 */}
+          <div 
+            className={`absolute w-48 h-48 rounded-full blur-2xl opacity-20 animate-pulse ${
+              isDarkMode ? 'bg-pink-500' : 'bg-pink-400'
+            }`}
+            style={{
+              bottom: '20%',
+              left: '30%',
+              animation: 'float 22s ease-in-out infinite reverse'
+            }}
+          />
+        </div>
+        
+        {/* Animated Grid Pattern */}
         <div 
-          className="w-full h-full" 
+          className={`absolute inset-0 opacity-5 ${
+            isDarkMode ? 'bg-white' : 'bg-gray-900'
+          }`}
           style={{
-            backgroundImage: isDarkMode 
-              ? `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-                 radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.3) 0%, transparent 50%)`
-              : `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
-                 radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.2) 0%, transparent 50%)`
+            backgroundImage: `
+              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
+            animation: 'gridMove 30s linear infinite'
           }}
         />
+        
+        {/* Gradient Overlays */}
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: isDarkMode 
+              ? `
+                radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 40% 70%, rgba(168, 85, 247, 0.3) 0%, transparent 50%)
+              `
+              : `
+                radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 70%, rgba(168, 85, 247, 0.2) 0%, transparent 50%)
+              `
+          }}
+        />
+        
+        {/* Animated Particles */}
+        <div className="absolute inset-0">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className={`absolute w-2 h-2 rounded-full opacity-30 ${
+                isDarkMode ? 'bg-white' : 'bg-gray-600'
+              }`}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `particle ${8 + Math.random() * 10}s linear infinite`,
+                animationDelay: `${Math.random() * 5}s`
+              }}
+            />
+          ))}
+        </div>
       </div>
+      
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px) translateX(0px) scale(1);
+          }
+          25% {
+            transform: translateY(-20px) translateX(10px) scale(1.05);
+          }
+          50% {
+            transform: translateY(-10px) translateX(-15px) scale(0.95);
+          }
+          75% {
+            transform: translateY(-30px) translateX(5px) scale(1.02);
+          }
+        }
+        
+        @keyframes gridMove {
+          0% {
+            transform: translate(0, 0);
+          }
+          100% {
+            transform: translate(50px, 50px);
+          }
+        }
+        
+        @keyframes particle {
+          0% {
+            transform: translateY(100vh) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.3;
+          }
+          90% {
+            opacity: 0.3;
+          }
+          100% {
+            transform: translateY(-100vh) rotate(360deg);
+            opacity: 0;
+          }
+        }
+      `}</style>
 
       <div className="relative z-10 container mx-auto px-6 py-8">
         <Header 

@@ -126,16 +126,27 @@ export const Header: React.FC<HeaderProps> = ({
                 isDarkMode ? 'text-blue-300' : 'text-blue-700'
               }`}>
                 Welcome {getUserDisplayName()}
-              </p>
+        rounded-3xl p-6 backdrop-blur-xl border transition-all duration-500 hover:scale-[1.02]
+        hover:shadow-2xl group relative overflow-hidden
             </div>
           </div>
         </div>
 
         {/* Right - Button Groups */}
+        {/* Subtle hover glow effect */}
+        <div className={`
+          absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500
+          bg-gradient-to-r ${isDarkMode 
+            ? 'from-blue-500/20 via-purple-500/20 to-pink-500/20' 
+            : 'from-blue-400/20 via-purple-400/20 to-pink-400/20'
+          }
+        `} />
+        
         <div className="flex flex-col space-y-3 items-end">
           {/* App Controls Group */}
           <div className={`
-            rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300
+            rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300 hover:scale-105
+            hover:shadow-xl group
             ${isDarkMode 
               ? 'bg-slate-900/30 border-slate-700/50' 
               : 'bg-white/15 border-gray-300/40'
@@ -202,7 +213,7 @@ export const Header: React.FC<HeaderProps> = ({
               )}
               
               {/* Dark Mode Toggle */}
-              <button
+                className="w-8 h-8 transition-transform duration-300 group-hover:rotate-12"
                 onClick={onToggleDarkMode}
                 className={`
                   p-1.5 rounded-lg backdrop-blur-sm border transition-all duration-300
@@ -211,17 +222,18 @@ export const Header: React.FC<HeaderProps> = ({
                     ? 'bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:bg-slate-800/60' 
                     : 'bg-white/20 border-white/30 text-gray-700 hover:bg-white/30'
                   }
-                `}
+            <User className={`w-8 h-8 text-blue-500 transition-transform duration-300 group-hover:rotate-12 ${currentUser?.rank ? 'hidden' : ''}`} />
               >
                 {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
+              <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse group-hover:animate-spin" />
             </div>
           </div>
 
           {/* Match Features Group */}
           {(showMatchHistoryButton || showAnalysisButton) && (
             <div className={`
-              rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300
+              rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300 hover:scale-105
+              hover:shadow-xl group
               ${isDarkMode 
                 ? 'bg-slate-900/30 border-slate-700/50' 
                 : 'bg-white/15 border-gray-300/40'
@@ -259,7 +271,7 @@ export const Header: React.FC<HeaderProps> = ({
                       flex items-center space-x-1 px-2 py-1.5 rounded-lg backdrop-blur-sm border transition-all duration-300
                       hover:scale-105 active:scale-95 text-sm font-medium
                       ${isDarkMode 
-                        ? 'bg-slate-800/40 border-slate-700/50 text-cyan-400 hover:bg-slate-800/60' 
+          <div className="relative z-10">
                         : 'bg-white/20 border-white/30 text-cyan-700 hover:bg-white/30'
                       }
                     `}
