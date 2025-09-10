@@ -38,26 +38,14 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
     try {
       setIsLoading(true);
       setError('');
-      
-      try {
-        // Reduce the number of matches to avoid rate limits
-        const matchLimit = showCompetitiveOnly ? 8 : 10; // Reduced from 15
-        const matchHistory = showCompetitiveOnly
-          ? await getProcessedCompetitiveHistory(player.puuid, matchLimit)
-          : await getProcessedMatchHistory(player.puuid, matchLimit);
-        const sortedMatches = matchHistory.sort((a, b) => b.gameStartTime - a.gameStartTime);
-        setMatches(sortedMatches);
-      } catch (apiError) {
-        // Handle rate limit errors gracefully
-        if (apiError.toString().includes('429')) {
-          setError('Rate limited by Riot API. Please wait a moment and try again.');
-        } else {
-          setError('Failed to load match history. Please try again.');
-        }
-        console.error('Match history API error:', apiError);
-      }
+      // Always fetch fresh data - no caching
+      const matchHistory = showCompetitiveOnly
+        ? await getProcessedCompetitiveHistory(player.puuid, 15)
+        : await getProcessedMatchHistory(player.puuid, 15);
+      const sortedMatches = matchHistory.sort((a, b) => b.gameStartTime - a.gameStartTime);
+      setMatches(sortedMatches);
     } catch (err) {
-      setError('Failed to load match history. Please try again.');
+      setError('Failed to load match history');
       console.error('Match history error:', err);
     } finally {
       setIsLoading(false);
