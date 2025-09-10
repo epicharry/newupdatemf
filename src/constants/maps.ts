@@ -155,4 +155,5 @@ export const QUEUE_TYPES: Record<string, string> = {
   "replication": "Replication",
   "snowball": "Snowball Fight",
   "hurm": "Team Deathmatch"
+  "hurm": "Team Deathmatch"
 };
