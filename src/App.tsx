@@ -653,9 +653,97 @@ function App() {
         )}
 
         {myTeamPlayers.length > 0 && (
-          <div className={`max-w-6xl mx-auto ${
-            enemyTeamPlayers.length > 0 ? 'grid lg:grid-cols-2 gap-8' : 'max-w-3xl'
-          }`}>
+          <div className="max-w-6xl mx-auto">
+            {/* Check if this is deathmatch (all players in myTeam, no enemies) */}
+            {enemyTeamPlayers.length === 0 && myTeamPlayers.length > 5 ? (
+              /* Deathmatch Grid Layout */
+              <DeathmatchGrid
+                players={myTeamPlayers}
+                isDarkMode={isDarkMode}
+                onPlayerClick={handlePlayerClick}
+              />
+            ) : (
+              /* Normal Team Layout */
+              <div className={`${
+                enemyTeamPlayers.length > 0 ? 'grid lg:grid-cols-2 gap-8' : 'max-w-3xl mx-auto'
+              }`}>
+                <MyTeamSection
+                  title="Your Team"
+                  players={myTeamPlayers}
+                  isMyTeam={true}
+                  isDarkMode={isDarkMode}
+                  onPlayerClick={handlePlayerClick}
+                />
+                
+                {/* Only show enemy team if there are enemy players (live match) */}
+                {enemyTeamPlayers.length > 0 && (
+                  <EnemyTeamSection
+                    title="Enemy Team"
+                    players={enemyTeamPlayers}
+                    isMyTeam={false}
+                    isDarkMode={isDarkMode}
+                    onPlayerClick={handlePlayerClick}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* No Match State */}
+        {!isLoading && totalPlayers === 0 && isConnected && (
+          <div className="text-center mt-16">
+            <div className="text-6xl mb-4">🎮</div>
+            <h2 className={`text-2xl font-bold mb-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              No Active Match
+            </h2>
+            <p className={`max-w-md mx-auto ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              Start a Valorant match to see live player information and team details.
+            </p>
+            <div className={`mt-4 text-sm ${
+              isDarkMode ? 'text-gray-500' : 'text-gray-500'
+            }`}>
+              Auto-refreshing every 5 seconds...
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && !isConnected && (
+          <div className="text-center mt-16">
+            <div className="text-6xl mb-4">⚡</div>
+            <h2 className={`text-2xl font-bold mb-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Connecting to Riot Client
+            </h2>
+            <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+              Please make sure Valorant is running...
+            </p>
+          </div>
+        )}
+
+        {/* Auto-refresh indicator for no match state */}
+        {!matchDetected && isConnected && !isLoading && (
+          <div className="text-center mt-8">
+            <div className={`
+              inline-flex items-center space-x-2 px-4 py-2 rounded-full
+              backdrop-blur-sm border text-sm
+              ${isDarkMode 
+                ? 'bg-slate-800/40 border-slate-700/50 text-gray-400' 
+                : 'bg-white/20 border-white/30 text-gray-600'
+              }
+            `}>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Searching for matches...</span>
+            </div>
+          </div>
+        )}
+      </div>
             <MyTeamSection
               title="Your Team"
               players={myTeamPlayers}
