@@ -131,27 +131,27 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right - Button Groups */}
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-3 items-end">
           {/* App Controls Group */}
           <div className={`
-            rounded-2xl p-4 backdrop-blur-xl border transition-all duration-300
+            rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300
             ${isDarkMode 
               ? 'bg-slate-900/30 border-slate-700/50' 
               : 'bg-white/15 border-white/25'
             }
           `}>
-            <div className={`text-xs font-medium mb-3 ${
+            <div className={`text-xs font-medium mb-2 text-center ${
               isDarkMode ? 'text-gray-400' : 'text-gray-600'
             }`}>
               APP CONTROLS
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-center space-x-2">
               {/* FAQ Button */}
               {onViewFAQ && (
                 <button
                   onClick={onViewFAQ}
                   className={`
-                    flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                    flex items-center space-x-1 px-2 py-1.5 rounded-lg backdrop-blur-sm border transition-all duration-300
                     hover:scale-105 active:scale-95 text-sm font-medium
                     ${isDarkMode 
                       ? 'bg-slate-800/40 border-slate-700/50 text-green-400 hover:bg-slate-800/60' 
@@ -169,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   onClick={onViewSuggestions}
                   className={`
-                    flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                    flex items-center space-x-1 px-2 py-1.5 rounded-lg backdrop-blur-sm border transition-all duration-300
                     hover:scale-105 active:scale-95 text-sm font-medium
                     ${isDarkMode 
                       ? 'bg-slate-800/40 border-slate-700/50 text-orange-400 hover:bg-slate-800/60' 
@@ -187,7 +187,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   onClick={onCheckUpdates}
                   className={`
-                    flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                    flex items-center space-x-1 px-2 py-1.5 rounded-lg backdrop-blur-sm border transition-all duration-300
                     hover:scale-105 active:scale-95 text-sm font-medium
                     ${isDarkMode 
                       ? 'bg-slate-800/40 border-slate-700/50 text-purple-400 hover:bg-slate-800/60' 
@@ -204,7 +204,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={onToggleDarkMode}
                 className={`
-                  p-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                  p-1.5 rounded-lg backdrop-blur-sm border transition-all duration-300
                   hover:scale-110 active:scale-95
                   ${isDarkMode 
                     ? 'bg-slate-800/40 border-slate-700/50 text-yellow-400 hover:bg-slate-800/60' 
@@ -220,24 +220,24 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Match Features Group */}
           {(showMatchHistoryButton || showAnalysisButton) && (
             <div className={`
-              rounded-2xl p-4 backdrop-blur-xl border transition-all duration-300
+              rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300
               ${isDarkMode 
                 ? 'bg-slate-900/30 border-slate-700/50' 
                 : 'bg-white/15 border-white/25'
               }
             `}>
-              <div className={`text-xs font-medium mb-3 ${
+              <div className={`text-xs font-medium mb-2 text-center ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-600'
               }`}>
                 MATCH FEATURES
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center space-x-2">
                 {/* Match History Button */}
                 {showMatchHistoryButton && onViewMatchHistory && (
                   <button
                     onClick={onViewMatchHistory}
                     className={`
-                      flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                      flex items-center space-x-1 px-2 py-1.5 rounded-lg backdrop-blur-sm border transition-all duration-300
                       hover:scale-105 active:scale-95 text-sm font-medium
                       ${isDarkMode 
                         ? 'bg-slate-800/40 border-slate-700/50 text-blue-400 hover:bg-slate-800/60' 
@@ -255,7 +255,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={onViewAnalysis}
                     className={`
-                      flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-300
+                      flex items-center space-x-1 px-2 py-1.5 rounded-lg backdrop-blur-sm border transition-all duration-300
                       hover:scale-105 active:scale-95 text-sm font-medium
                       ${isDarkMode 
                         ? 'bg-slate-800/40 border-slate-700/50 text-cyan-400 hover:bg-slate-800/60' 
