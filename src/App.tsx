@@ -11,11 +11,6 @@ import { Footer } from './components/Footer';
 import { UpdateModal } from './components/UpdateModal';
 
 function App() {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : true;
-  });
-
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerInfo | null>(null);
   const [currentView, setCurrentView] = useState<'main' | 'match-history' | 'faq' | 'suggestions' | 'analysis'>('main');
   const [currentUser, setCurrentUser] = useState<PlayerInfo | null>(null);
@@ -235,23 +230,12 @@ function App() {
           setCurrentUser(userData);
         } catch (error) {
           console.error('Failed to get current user info:', error);
-          // Don't retry immediately on rate limit errors
-          if (error.toString().includes('429')) {
-            console.warn('Rate limited - will retry later');
-          }
         }
       }
     };
-    
+
     getCurrentUserInfo();
   }, [isConnected, currentUser, isInitializing, userDataCache]);
-  useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
-  }, [isDarkMode]);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-  };
 
   const handlePlayerClick = (player: PlayerInfo) => {
     setSelectedPlayer(player);
@@ -706,14 +690,16 @@ function App() {
           </div>
         )}
       </div>
-
+      
+      {/* Footer */}
+      <Footer isDarkMode={isDarkMode} />
+      
       {/* Update Modal */}
-      {showUpdateModal && (
-        <UpdateModal
-          onClose={handleCloseUpdateModal}
-          isDarkMode={isDarkMode}
-        />
-      )}
+      <UpdateModal
+        isOpen={showUpdateModal}
+        onClose={handleCloseUpdateModal}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 }
