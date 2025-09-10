@@ -43,7 +43,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
   return (
     <div className={`
       backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300
-      hover:scale-[1.02] hover:shadow-xl group cursor-pointer
+      hover:scale-[1.02] hover:shadow-xl cursor-pointer
       ${isDarkMode 
         ? 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/60' 
         : 'bg-white/20 border-white/30 hover:bg-white/30'
@@ -59,7 +59,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
         {/* Agent Avatar */}
         <div className="relative">
           {player.agentImageUrl ? (
-            <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-white/20 group-hover:ring-white/40 transition-all duration-300">
+            <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-white/20 hover:ring-white/40 transition-all duration-300">
               <img 
                 src={player.agentImageUrl} 
                 alt={player.agent}
@@ -83,7 +83,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
             <div className={`
               ${getAgentColor()} rounded-full w-14 h-14 flex items-center justify-center
               text-white font-bold text-lg shadow-lg ring-2 ring-white/20 
-              group-hover:ring-white/40 transition-all duration-300
+              hover:ring-white/40 transition-all duration-300
             `}>
               {player.agent[0] || <User className="w-6 h-6" />}
             </div>
