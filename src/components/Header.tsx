@@ -137,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
             rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300
             ${isDarkMode 
               ? 'bg-slate-900/30 border-slate-700/50' 
-              : 'bg-white/15 border-white/25'
+              : 'bg-white/15 border-gray-300/40'
             }
           `}>
             <div className={`text-xs font-medium mb-2 text-center ${
@@ -223,7 +223,7 @@ export const Header: React.FC<HeaderProps> = ({
               rounded-2xl p-3 backdrop-blur-xl border transition-all duration-300
               ${isDarkMode 
                 ? 'bg-slate-900/30 border-slate-700/50' 
-                : 'bg-white/15 border-white/25'
+                : 'bg-white/15 border-gray-300/40'
               }
             `}>
               <div className={`text-xs font-medium mb-2 text-center ${
