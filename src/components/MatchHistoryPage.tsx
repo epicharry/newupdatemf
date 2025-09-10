@@ -279,6 +279,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                     src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}.png`}
                     alt={player.rank.rank}
                     className="w-12 h-12"
+                    draggable={false}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
@@ -313,6 +314,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                           : 'bg-gray-400'
                       }`}
                       style={{ width: `${player.rank.rr}%` }}
+                      draggable={false}
                     />
                   </div>
                   
@@ -393,6 +395,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                           src={match.playerStats.agentImage}
                           alt={match.playerStats.agent}
                           className="w-full h-full object-cover"
+                          draggable={false}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = `https://via.placeholder.com/64x64?text=${match.playerStats.agent[0]}`;
@@ -460,6 +463,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                         src={match.mapImage}
                         alt={match.mapName}
                         className="w-full h-full object-cover"
+                        draggable={false}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = 'https://via.placeholder.com/144x96?text=Map';

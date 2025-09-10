@@ -64,6 +64,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
                 src={player.agentImageUrl} 
                 alt={player.agent}
                 className="w-full h-full object-cover"
+                draggable={false}
                 onError={(e) => {
                   // Fallback to letter avatar if image fails to load
                   const target = e.target as HTMLImageElement;
@@ -110,6 +111,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
               src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}.png`}
               alt={player.rank.rank}
               className="w-5 h-5"
+              draggable={false}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';

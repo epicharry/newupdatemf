@@ -492,6 +492,8 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
               src={agentImageUrl} 
               alt={agentName}
               className="w-full h-full object-cover"
+              draggable={false}
+              draggable={false}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = `https://via.placeholder.com/48x48?text=${agentName[0]}`;
@@ -542,6 +544,7 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
                   src={`./rank-icons/${(RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '')}.png`}
                   alt={RANKS[player.competitiveTier] || 'Unranked'}
                   className="w-5 h-5"
+                  draggable={false}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';

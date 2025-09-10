@@ -82,6 +82,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     src={currentUser.agentImageUrl} 
                     alt="Agent"
                     className="w-full h-full object-cover"
+                    draggable={false}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
@@ -130,6 +131,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 src={`./rank-icons/${currentUser.rank.rank.toLowerCase().replace(' ', '')}.png`}
                 alt={currentUser.rank.rank}
                 className="w-8 h-8"
+                draggable={false}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
