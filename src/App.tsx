@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { ThemeSelector } from './components/ThemeSelector';
 import { MyTeamSection, EnemyTeamSection } from './components/TeamSection';
 import { MatchHistoryPage } from './components/MatchHistoryPage';
 import { FAQPage } from './components/FAQPage';
@@ -19,19 +18,12 @@ import { MaintenanceService } from './services/maintenanceService';
 import { UserService } from './services/userService';
 import { UpdateService } from './services/updateService';
 import { supabase } from './services/supabaseClient';
-import { useTheme } from './hooks/useTheme';
 
 function App() {
-  const { 
-    themeConfig,
-    setThemeMode,
-    setRandomTheme,
-    getThemeStyles,
-    isDarkMode,
-    getCurrentThemeName
-  } = useTheme();
-  
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerInfo | null>(null);
   const [currentView, setCurrentView] = useState<'main' | 'match-history' | 'faq' | 'suggestions' | 'analysis'>('main');
@@ -69,8 +61,6 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [refreshCooldown]);
-
-  const themeStyles = getThemeStyles();
 
   // Check database connection on app launch
   useEffect(() => {
@@ -205,17 +195,12 @@ function App() {
     
     getCurrentUserInfo();
   }, [isConnected, currentUser]);
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
 
   const toggleDarkMode = () => {
-    setThemeMode(isDarkMode ? 'light' : 'dark');
-  };
-
-  const handleOpenThemeSelector = () => {
-    setShowThemeSelector(true);
-  };
-
-  const handleCloseThemeSelector = () => {
-    setShowThemeSelector(false);
+    setIsDarkMode(!isDarkMode);
   };
 
   const handlePlayerClick = (player: PlayerInfo) => {
@@ -354,151 +339,83 @@ function App() {
   // Show match history page if a player is selected
   if (selectedPlayer) {
     return (
-      <div className={`min-h-screen transition-all duration-500 ${themeStyles.backgroundStyle}`}>
-        {themeConfig.mode === 'half' && (
-          <div 
-            className="fixed inset-0 z-0"
-            style={{
-              background: `linear-gradient(to right, ${themeConfig.leftColor}20 0%, ${themeConfig.leftColor}20 50%, ${themeConfig.rightColor}20 50%, ${themeConfig.rightColor}20 100%)`
-            }}
-          />
-        )}
-        <div className="relative z-10">
-          <MatchHistoryPage
-            player={selectedPlayer}
-            onBack={handleBackToMain}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={toggleDarkMode}
-          />
-        </div>
-      </div>
+      <MatchHistoryPage
+        player={selectedPlayer}
+        onBack={handleBackToMain}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+      />
     );
   }
 
   // Show current user's match history
   if (currentView === 'match-history' && currentUser) {
     return (
-      <div className={`min-h-screen transition-all duration-500 ${themeStyles.backgroundStyle}`}>
-        {themeConfig.mode === 'half' && (
-          <div 
-            className="fixed inset-0 z-0"
-            style={{
-              background: `linear-gradient(to right, ${themeConfig.leftColor}20 0%, ${themeConfig.leftColor}20 50%, ${themeConfig.rightColor}20 50%, ${themeConfig.rightColor}20 100%)`
-            }}
-          />
-        )}
-        <div className="relative z-10">
-          <MatchHistoryPage
-            player={currentUser}
-            onBack={handleBackFromMatchHistory}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={toggleDarkMode}
-          />
-        </div>
-      </div>
+      <MatchHistoryPage
+        player={currentUser}
+        onBack={handleBackFromMatchHistory}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+      />
     );
   }
 
   // Show FAQ page
   if (currentView === 'faq') {
     return (
-      <div className={`min-h-screen transition-all duration-500 ${themeStyles.backgroundStyle}`}>
-        {themeConfig.mode === 'half' && (
-          <div 
-            className="fixed inset-0 z-0"
-            style={{
-              background: `linear-gradient(to right, ${themeConfig.leftColor}20 0%, ${themeConfig.leftColor}20 50%, ${themeConfig.rightColor}20 50%, ${themeConfig.rightColor}20 100%)`
-            }}
-          />
-        )}
-        <div className="relative z-10">
-          <FAQPage
-            onBack={handleBackFromFAQ}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={toggleDarkMode}
-          />
-        </div>
-      </div>
+      <FAQPage
+        onBack={handleBackFromFAQ}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+      />
     );
   }
 
   // Show suggestions page
   if (currentView === 'suggestions') {
     return (
-      <div className={`min-h-screen transition-all duration-500 ${themeStyles.backgroundStyle}`}>
-        {themeConfig.mode === 'half' && (
-          <div 
-            className="fixed inset-0 z-0"
-            style={{
-              background: `linear-gradient(to right, ${themeConfig.leftColor}20 0%, ${themeConfig.leftColor}20 50%, ${themeConfig.rightColor}20 50%, ${themeConfig.rightColor}20 100%)`
-            }}
-          />
-        )}
-        <div className="relative z-10">
-          <SuggestionsPage
-            onBack={handleBackFromSuggestions}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={toggleDarkMode}
-            currentUserPuuid={currentUser?.puuid}
-          />
-        </div>
-      </div>
+      <SuggestionsPage
+        onBack={handleBackFromSuggestions}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+        currentUserPuuid={currentUser?.puuid}
+      />
     );
   }
 
   // Show analysis page
   if (currentView === 'analysis') {
     return (
-      <div className={`min-h-screen transition-all duration-500 ${themeStyles.backgroundStyle}`}>
-        {themeConfig.mode === 'half' && (
-          <div 
-            className="fixed inset-0 z-0"
-            style={{
-              background: `linear-gradient(to right, ${themeConfig.leftColor}20 0%, ${themeConfig.leftColor}20 50%, ${themeConfig.rightColor}20 50%, ${themeConfig.rightColor}20 100%)`
-            }}
-          />
-        )}
-        <div className="relative z-10">
-          <AnalysisPage
-            currentTeammates={myTeamPlayers}
-            currentEnemies={enemyTeamPlayers}
-            currentUserPuuid={currentUser?.puuid || ''}
-            onBack={handleBackFromAnalysis}
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={toggleDarkMode}
-          />
-        </div>
-      </div>
+      <AnalysisPage
+        currentTeammates={myTeamPlayers}
+        currentEnemies={enemyTeamPlayers}
+        currentUserPuuid={currentUser?.puuid || ''}
+        onBack={handleBackFromAnalysis}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+      />
     );
   }
 
   return (
-    <div className={`min-h-screen transition-all duration-500 ${themeStyles.backgroundStyle}`}>
-      {/* Half/Half Background */}
-      {themeConfig.mode === 'half' && (
+    <div className={`min-h-screen transition-all duration-500 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
+        : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
+    }`}>
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-30">
         <div 
-          className="fixed inset-0 z-0"
+          className="w-full h-full" 
           style={{
-            background: `linear-gradient(to right, ${themeConfig.leftColor}20 0%, ${themeConfig.leftColor}20 50%, ${themeConfig.rightColor}20 50%, ${themeConfig.rightColor}20 100%)`
+            backgroundImage: isDarkMode 
+              ? `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
+                 radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.3) 0%, transparent 50%)`
+              : `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
+                 radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.2) 0%, transparent 50%)`
           }}
         />
-      )}
-      
-      {/* Background Pattern for non-half modes */}
-      {themeConfig.mode !== 'half' && (
-        <div className="absolute inset-0 opacity-30">
-          <div 
-            className="w-full h-full" 
-            style={{
-              backgroundImage: isDarkMode 
-                ? `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-                   radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.3) 0%, transparent 50%)`
-                : `radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
-                   radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.2) 0%, transparent 50%)`
-            }}
-          />
-        </div>
-      )}
+      </div>
 
       {/* Welcome Message */}
       {currentUser && !isLoading && (
@@ -522,7 +439,6 @@ function App() {
           onRefresh={handleRefreshWithCooldown}
           isDarkMode={isDarkMode}
           onToggleDarkMode={toggleDarkMode}
-          onOpenThemeSelector={handleOpenThemeSelector}
           currentRegion={currentRegion}
           onViewMatchHistory={handleViewMatchHistory}
           showMatchHistoryButton={isConnected && currentUser !== null}
@@ -617,17 +533,6 @@ function App() {
       
       {/* Footer */}
       <Footer isDarkMode={isDarkMode} />
-      
-      {/* Theme Selector Modal */}
-      <ThemeSelector
-        isOpen={showThemeSelector}
-        onClose={handleCloseThemeSelector}
-        themeConfig={themeConfig}
-        onThemeChange={setThemeMode}
-        onRandomColors={setRandomTheme}
-        isDarkMode={isDarkMode}
-        getCurrentThemeName={getCurrentThemeName}
-      />
       
       {/* Update Modal */}
       <UpdateModal
