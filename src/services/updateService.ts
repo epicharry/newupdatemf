@@ -15,7 +15,7 @@ export interface UpdateStatus {
 }
 
 export class UpdateService {
-  private static readonly UPDATE_CHECK_URL = 'https://api.github.com/repos/yoyosingh123/valradiant/releases/latest';
+  private static readonly UPDATE_CHECK_URL = 'https://api.github.com/repos/epicharry/valradiant/releases/latest';
   private static readonly CURRENT_VERSION = '1.0.0'; // This should match your package.json version
   private static cachedUpdateInfo: UpdateStatus | null = null;
   private static lastCheck: number = 0;
