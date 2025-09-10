@@ -423,20 +423,23 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
             }`}>
               {agentName}
             </div>
-            <div className="flex items-center space-x-2 mt-1">
-              <img 
-                src={`./rank-icons/${(RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '')}.png`}
-                alt={RANKS[player.competitiveTier] || 'Unranked'}
-                className="w-5 h-5"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
-              <div className={`text-sm font-medium ${getRankColor(player.competitiveTier)}`}>
-                {RANKS[player.competitiveTier] || 'Unranked'}
+            {/* Only show rank for competitive matches */}
+            {matchDetails.matchInfo.isRanked && (
+              <div className="flex items-center space-x-2 mt-1">
+                <img 
+                  src={`./rank-icons/${(RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '')}.png`}
+                  alt={RANKS[player.competitiveTier] || 'Unranked'}
+                  className="w-5 h-5"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+                <div className={`text-sm font-medium ${getRankColor(player.competitiveTier)}`}>
+                  {RANKS[player.competitiveTier] || 'Unranked'}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
