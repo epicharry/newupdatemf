@@ -191,7 +191,7 @@ export const PlayerSearchPage: React.FC<PlayerSearchPageProps> = ({
               <label className={`block text-sm font-medium mb-2 ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
-                Player Name (Username#Tag)
+                Player Name (Username#Tag) - Search may take up to 30 seconds
               </label>
               <input
                 type="text"
