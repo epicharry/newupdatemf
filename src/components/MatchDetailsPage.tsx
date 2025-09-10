@@ -320,6 +320,46 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
   // Find the overall match MVP (highest kills across all players)
   const matchMVP = [...allPlayers].sort((a, b) => b.stats.kills - a.stats.kills)[0];
 
+  // Detect parties within this team
+  const detectParties = (teamPlayers: MatchPlayer[]) => {
+    const partyGroups: Record<string, MatchPlayer[]> = {};
+    
+    teamPlayers.forEach(player => {
+      if (player.partyId) {
+        if (!partyGroups[player.partyId]) {
+          partyGroups[player.partyId] = [];
+        }
+        partyGroups[player.partyId].push(player);
+      }
+    });
+    
+    // Only return parties with 2+ members
+    return Object.values(partyGroups).filter(party => party.length > 1);
+  };
+
+  const parties = detectParties(sortedPlayers);
+  
+  // Create a map of player to party info
+  const playerPartyMap = new Map<string, { size: number; members: string[] }>();
+  parties.forEach(party => {
+    const partyInfo = {
+      size: party.length,
+      members: party.map(p => `${p.gameName}#${p.tagLine}`)
+    };
+    party.forEach(player => {
+      playerPartyMap.set(player.subject, partyInfo);
+    });
+  });
+
+  const getPartyLabel = (size: number) => {
+    switch (size) {
+      case 2: return 'Duo';
+      case 3: return 'Trio';
+      case 4: return 'Quad';
+      case 5: return '5-Stack';
+      default: return `${size}-Party`;
+    }
+  };
   return (
     <div className={`
       rounded-3xl p-6 backdrop-blur-xl border transition-all duration-300
@@ -360,6 +400,32 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
         </h2>
       </div>
 
+      {/* Party Information */}
+      {parties.length > 0 && (
+        <div className="mb-6">
+          <div className={`text-sm font-medium mb-3 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            Party Information:
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {parties.map((party, index) => (
+              <div
+                key={index}
+                className={`
+                  px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm border
+                  ${isDarkMode 
+                    ? 'bg-purple-600/20 border-purple-500/30 text-purple-300' 
+                    : 'bg-purple-500/15 border-purple-400/30 text-purple-700'
+                  }
+                `}
+              >
+                👥 {getPartyLabel(party.length)}: {party.map(p => p.gameName).join(', ')}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Players */}
       <div className="space-y-3">
         {sortedPlayers.map((player) => (
@@ -370,6 +436,8 @@ const TeamDetailsSection: React.FC<TeamDetailsSectionProps> = ({
             isDarkMode={isDarkMode}
             getRankColor={getRankColor}
             matchDetails={matchDetails}
+            partyInfo={playerPartyMap.get(player.subject)}
+            getPartyLabel={getPartyLabel}
           />
         ))}
       </div>
@@ -383,6 +451,8 @@ interface PlayerDetailsCardProps {
   isDarkMode: boolean;
   getRankColor: (tier: number) => string;
   matchDetails: MatchDetails;
+  partyInfo?: { size: number; members: string[] };
+  getPartyLabel: (size: number) => string;
 }
 
 const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
@@ -390,7 +460,9 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
   isMatchMVP,
   isDarkMode,
   getRankColor,
-  matchDetails
+  matchDetails,
+  partyInfo,
+  getPartyLabel
 }) => {
   const agentName = AGENTS[player.characterId] || 'Unknown';
   const agentImageUrl = `https://media.valorant-api.com/agents/${player.characterId}/displayicon.png`;
@@ -402,6 +474,13 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
       ${isDarkMode 
         ? 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/60' 
         : 'bg-white/20 border-white/30 hover:bg-white/30'
+      }
+      ${partyInfo 
+        ? (isDarkMode 
+            ? 'ring-2 ring-purple-500/30' 
+            : 'ring-2 ring-purple-400/40'
+          )
+        : ''
       }
     `}>
       <div className="flex items-center justify-between">
@@ -432,6 +511,22 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
                 <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30">
                   <Crown className="w-3 h-3 text-yellow-400" />
                   <span className="text-xs text-yellow-400 font-medium">Match MVP</span>
+                </div>
+              )}
+              {partyInfo && (
+                <div className={`
+                  flex items-center space-x-1 px-2 py-1 rounded-full
+                  ${isDarkMode 
+                    ? 'bg-purple-600/20 border border-purple-500/30' 
+                    : 'bg-purple-500/15 border border-purple-400/30'
+                  }
+                `}>
+                  <Users className="w-3 h-3 text-purple-400" />
+                  <span className={`text-xs font-medium ${
+                    isDarkMode ? 'text-purple-300' : 'text-purple-700'
+                  }`}>
+                    {getPartyLabel(partyInfo.size)}
+                  </span>
                 </div>
               )}
             </div>
