@@ -331,18 +331,164 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
         {/* Match History */}
         <div className="space-y-4">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="text-4xl mb-4">⚡</div>
-              <h3
-                className={`text-xl font-semibold mb-2 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}
-              >
-                Loading Match History
-              </h3>
-              <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                Fetching recent matches...
-              </p>
+            <div className="space-y-4">
+              {/* Animated Header */}
+              <div className={`
+                rounded-3xl p-8 backdrop-blur-xl border text-center transition-all duration-300
+                ${isDarkMode 
+                  ? 'bg-slate-900/40 border-slate-700/50' 
+                  : 'bg-white/20 border-white/30'
+                }
+              `}>
+                {/* Animated Loading Icon */}
+                <div className="relative mb-6">
+                  <div className={`
+                    w-16 h-16 mx-auto rounded-full border-4 border-transparent
+                    ${isDarkMode 
+                      ? 'border-t-blue-400 border-r-purple-400' 
+                      : 'border-t-blue-600 border-r-purple-600'
+                    }
+                    animate-spin
+                  `} />
+                  <div className={`
+                    absolute inset-0 w-16 h-16 mx-auto rounded-full border-4 border-transparent
+                    ${isDarkMode 
+                      ? 'border-b-pink-400 border-l-cyan-400' 
+                      : 'border-b-pink-600 border-l-cyan-600'
+                    }
+                    animate-spin
+                  `} style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                  
+                  {/* Center Icon */}
+                  <div className={`
+                    absolute inset-0 flex items-center justify-center
+                    ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}
+                  `}>
+                    <Target className="w-6 h-6 animate-pulse" />
+                  </div>
+                </div>
+
+                {/* Animated Title */}
+                <h3 className={`text-2xl font-bold mb-3 ${
+                  isDarkMode ? 'text-white' : 'text-gray-800'
+                }`}>
+                  Loading Match History
+                </h3>
+                
+                {/* Animated Subtitle */}
+                <p className={`text-lg mb-4 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  Fetching recent matches...
+                </p>
+                
+                {/* Progress Dots */}
+                <div className="flex items-center justify-center space-x-2">
+                  {[0, 1, 2].map((index) => (
+                    <div
+                      key={index}
+                      className={`
+                        w-3 h-3 rounded-full
+                        ${isDarkMode ? 'bg-blue-400' : 'bg-blue-600'}
+                        animate-bounce
+                      `}
+                      style={{
+                        animationDelay: `${index * 0.2}s`,
+                        animationDuration: '1s'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Skeleton Loading Cards */}
+              {[1, 2, 3, 4, 5].map((index) => (
+                <div
+                  key={index}
+                  className={`
+                    rounded-2xl p-6 backdrop-blur-xl border transition-all duration-300
+                    ${isDarkMode 
+                      ? 'bg-slate-900/20 border-slate-700/30' 
+                      : 'bg-white/10 border-white/20'
+                    }
+                    animate-pulse
+                  `}
+                  style={{
+                    animationDelay: `${index * 0.1}s`,
+                    animationDuration: '2s'
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    {/* Left: Agent + Info Skeleton */}
+                    <div className="flex items-center space-x-4">
+                      {/* Agent Icon Skeleton */}
+                      <div className={`
+                        w-16 h-16 rounded-full
+                        ${isDarkMode ? 'bg-slate-700/50' : 'bg-gray-300/50'}
+                        animate-pulse
+                      `} />
+
+                      {/* Match Info Skeleton */}
+                      <div className="space-y-2">
+                        {/* Result + Queue Type */}
+                        <div className="flex items-center space-x-3">
+                          <div className={`
+                            h-6 w-20 rounded-full
+                            ${isDarkMode ? 'bg-slate-700/50' : 'bg-gray-300/50'}
+                          `} />
+                          <div className={`
+                            h-4 w-16 rounded-full
+                            ${isDarkMode ? 'bg-slate-700/30' : 'bg-gray-300/30'}
+                          `} />
+                        </div>
+                        
+                        {/* KDA */}
+                        <div className={`
+                          h-8 w-24 rounded-lg
+                          ${isDarkMode ? 'bg-slate-700/50' : 'bg-gray-300/50'}
+                        `} />
+                        
+                        {/* Additional Info */}
+                        <div className="flex items-center space-x-4">
+                          <div className={`
+                            h-3 w-12 rounded-full
+                            ${isDarkMode ? 'bg-slate-700/30' : 'bg-gray-300/30'}
+                          `} />
+                          <div className={`
+                            h-3 w-16 rounded-full
+                            ${isDarkMode ? 'bg-slate-700/30' : 'bg-gray-300/30'}
+                          `} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Center: Score Skeleton */}
+                    <div className="flex flex-col items-center justify-center min-w-[120px]">
+                      <div className={`
+                        h-8 w-16 rounded-lg mb-2
+                        ${isDarkMode ? 'bg-slate-700/50' : 'bg-gray-300/50'}
+                      `} />
+                      <div className={`
+                        h-4 w-12 rounded-full
+                        ${isDarkMode ? 'bg-slate-700/30' : 'bg-gray-300/30'}
+                      `} />
+                    </div>
+
+                    {/* Right: Map Skeleton */}
+                    <div className="text-right min-w-[120px]">
+                      <div className={`
+                        w-36 h-24 rounded-lg mb-2
+                        ${isDarkMode ? 'bg-slate-700/50' : 'bg-gray-300/50'}
+                        animate-pulse
+                      `} />
+                      <div className={`
+                        h-4 w-20 rounded-full mx-auto
+                        ${isDarkMode ? 'bg-slate-700/30' : 'bg-gray-300/30'}
+                      `} />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="text-center py-12">
