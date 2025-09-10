@@ -247,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({
                     : 'bg-white/15 border-gray-300/40'
                   }
                 `}>
-                  <div className={\`text-xs font-medium mb-2 text-center ${
+                  <div className={`text-xs font-medium mb-2 text-center ${
                     isDarkMode ? 'text-gray-400' : 'text-gray-600'
                   }`}>
                     MATCH FEATURES
