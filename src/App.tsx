@@ -11,6 +11,11 @@ import { Footer } from './components/Footer';
 import { UpdateModal } from './components/UpdateModal';
 
 function App() {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : true;
+  });
+
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerInfo | null>(null);
   const [currentView, setCurrentView] = useState<'main' | 'match-history' | 'faq' | 'suggestions' | 'analysis'>('main');
   const [currentUser, setCurrentUser] = useState<PlayerInfo | null>(null);
@@ -230,12 +235,23 @@ function App() {
           setCurrentUser(userData);
         } catch (error) {
           console.error('Failed to get current user info:', error);
+          // Don't retry immediately on rate limit errors
+          if (error.toString().includes('429')) {
+            console.warn('Rate limited - will retry later');
+          }
         }
       }
     };
-
+    
     getCurrentUserInfo();
   }, [isConnected, currentUser, isInitializing, userDataCache]);
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   const handlePlayerClick = (player: PlayerInfo) => {
     setSelectedPlayer(player);
@@ -320,6 +336,11 @@ function App() {
           ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
           : 'bg-gradient-to-br from-red-50 via-white to-red-50'
       }`}>
+        <div className={`min-h-screen flex items-center justify-center transition-all duration-500 ${
+        isDarkMode 
+          ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
+          : 'bg-gradient-to-br from-red-50 via-white to-red-50'
+      }`}>
         <div className="text-center max-w-md mx-auto px-6">
           <div className="text-6xl mb-4">🔒</div>
           <h1 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
@@ -329,6 +350,7 @@ function App() {
             Unable to connect to the application database. Please check your internet connection and try again.
           </p>
         </div>
+      </div>
       </div>
     );
   }
@@ -437,6 +459,11 @@ function App() {
 
   return (
     <div className={`min-h-screen transition-all duration-500 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
+        : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
+    }`}>
+      <div className={`min-h-screen transition-all duration-500 ${
       isDarkMode 
         ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
         : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
@@ -700,6 +727,7 @@ function App() {
         onClose={handleCloseUpdateModal}
         isDarkMode={isDarkMode}
       />
+      </div>
     </div>
   );
 }
