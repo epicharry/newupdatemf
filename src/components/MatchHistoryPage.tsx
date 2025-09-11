@@ -97,6 +97,43 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
     }
   };
 
+  const loadMoreMatches = async () => {
+    try {
+      setIsLoadingMore(true);
+      setError('');
+      
+      const newLimit = currentLimit + 10;
+      
+      // Use the same region detection logic
+      let targetRegion = '';
+      if (player.playerRegion) {
+        targetRegion = player.playerRegion;
+      }
+      
+      const additionalMatches = showCompetitiveOnly
+        ? await getProcessedCompetitiveHistory(player.puuid, newLimit, targetRegion) 
+        : await getProcessedMatchHistory(player.puuid, newLimit, targetRegion);
+      
+      setMatches(additionalMatches);
+      setCurrentLimit(newLimit);
+      
+      // Check if we have fewer matches than requested (indicates no more matches available)
+      setHasMoreMatches(additionalMatches.length === newLimit);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load more matches';
+      
+      if (errorMessage.includes('429') || errorMessage.includes('Rate limited')) {
+        setError('Rate limited by Riot API. Please wait a moment before trying again.');
+      } else {
+        setError(errorMessage);
+      }
+      
+      console.error('Load more matches error:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   const openTrackerProfile = () => {
     const encodedName = encodeURIComponent(player.name);
     const trackerUrl = `https://tracker.gg/valorant/profile/riot/${encodedName}/overview`;
