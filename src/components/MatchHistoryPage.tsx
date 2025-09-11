@@ -97,43 +97,6 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
     }
   };
 
-  const loadMoreMatches = async () => {
-    try {
-      setIsLoadingMore(true);
-      setError('');
-      
-      const newLimit = currentLimit + 10;
-      
-      // Use the same region detection logic
-      let targetRegion = '';
-      if (player.playerRegion) {
-        targetRegion = player.playerRegion;
-      }
-      
-      const additionalMatches = showCompetitiveOnly
-        ? await getProcessedCompetitiveHistory(player.puuid, newLimit, targetRegion) 
-        : await getProcessedMatchHistory(player.puuid, newLimit, targetRegion);
-      
-      setMatches(additionalMatches);
-      setCurrentLimit(newLimit);
-      
-      // Check if we have fewer matches than requested (indicates no more matches available)
-      setHasMoreMatches(additionalMatches.length === newLimit);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load more matches';
-      
-      if (errorMessage.includes('429') || errorMessage.includes('Rate limited')) {
-        setError('Rate limited by Riot API. Please wait a moment before trying again.');
-      } else {
-        setError(errorMessage);
-      }
-      
-      console.error('Load more matches error:', err);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
-
   const openTrackerProfile = () => {
     const encodedName = encodeURIComponent(player.name);
     const trackerUrl = `https://tracker.gg/valorant/profile/riot/${encodedName}/overview`;
@@ -712,6 +675,51 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
             ))
           )}
         </div>
+
+        {/* Load More Button */}
+        {!isLoading && matches.length > 0 && hasMoreMatches && (
+          <div className="text-center mt-8">
+            <button
+              onClick={loadMoreMatches}
+              disabled={isLoadingMore}
+              className={`
+                px-8 py-4 rounded-xl font-medium transition-all duration-300
+                backdrop-blur-sm border hover:scale-105 active:scale-95
+                disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50
+                ${isDarkMode 
+                  ? 'bg-blue-600/30 border-blue-500/50 text-blue-300 hover:bg-blue-600/40' 
+                  : 'bg-blue-500/30 border-blue-400/50 text-blue-700 hover:bg-blue-500/40'
+                }
+              `}
+            >
+              {isLoadingMore ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span>Loading More Matches...</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <span>Load More Matches</span>
+                </div>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* End of matches indicator */}
+        {!isLoading && matches.length > 0 && !hasMoreMatches && (
+          <div className="text-center mt-8">
+            <div className={`
+              px-6 py-3 rounded-xl backdrop-blur-sm border
+              ${isDarkMode 
+                ? 'bg-slate-800/40 border-slate-700/50 text-gray-400' 
+                : 'bg-white/20 border-white/30 text-gray-600'
+              }
+            `}>
+              <span>No more matches to load</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
