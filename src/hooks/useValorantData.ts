@@ -167,7 +167,7 @@
       matchDetected,
       totalPlayers: matchData.players.length,
       refresh: manualRefresh,
-      currentRegion: apiRef.current.getCurrentRegion()
-    currentRegion: apiRef.current.getCurrentRegion(),
-    matchType: matchData.type
+      currentRegion: apiRef.current.getCurrentRegion(),
+      matchType: matchData.type
+    };
   };
