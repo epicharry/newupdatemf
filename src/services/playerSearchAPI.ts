@@ -95,15 +95,17 @@ export class PlayerSearchAPI {
       try {
         console.log(`dak.gg API attempt ${attempt}/${this.MAX_RETRIES} for ${username}#${tag}`);
 
-        const response = await this.fetchWithTimeout(url, {
+        // Use Electron's request handler to bypass CORS
+        const response = await window.electronAPI.makeRequest({
+          url,
           method: 'GET',
           headers: {
             'Accept': 'application/json',
             'User-Agent': 'ValRadiant-App/1.0.0'
           }
-        }, this.REQUEST_TIMEOUT);
+        });
 
-        if (!response.ok) {
+        if (response.status !== 200) {
           if (response.status === 404) {
             throw new Error('Player not found on dak.gg');
           } else if (response.status === 429) {
@@ -115,9 +117,9 @@ export class PlayerSearchAPI {
           }
         }
 
-        const data = await response.json();
+        const data = response.data;
         
-        if (!data.pageProps?.account) {
+        if (!data?.pageProps?.account) {
           throw new Error('Invalid response from dak.gg API');
         }
 
