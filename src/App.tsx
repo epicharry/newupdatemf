@@ -222,28 +222,24 @@ function App() {
             return;
           }
 
-          // Always fetch fresh data for current user rank
-          console.log('Fetching current user rank data...');
+          // Only fetch if we don't have cached data or it's stale
+          const api = new ValorantAPI();
+          await api.fetchTokens();
           
-          // Use the existing API instance from the hook
-          const rank = await apiRef.current.getPlayerRank(tokens.puuid);
-          console.log('Current user rank result:', rank);
+          // Get user's rank (this is the expensive call)
+          const rank = await api.getPlayerRank(tokens.puuid);
           
           // Get user's name
-          const names = await apiRef.current.getPlayerNames([tokens.puuid]);
+          const names = await api.getPlayerNames([tokens.puuid]);
           const userName = names[tokens.puuid] || 'You';
-          console.log('Current user name:', userName);
           
           const userData: PlayerInfo = {
             puuid: tokens.puuid,
             name: userName,
             agent: '',
             rank: rank,
-            teamId: '',
-            agentImageUrl: undefined
+            teamId: ''
           };
-          
-          console.log('Setting current user data:', userData);
           
           // Cache the data
           setUserDataCache({
@@ -264,38 +260,8 @@ function App() {
     };
     
     getCurrentUserInfo();
-  }, [isConnected, currentUser, isInitializing]);
+  }, [isConnected, currentUser, isInitializing, userDataCache]);
 
-  // Force refresh current user rank periodically
-  useEffect(() => {
-    if (!isConnected || !currentUser) return;
-    
-    const refreshUserRank = async () => {
-      try {
-        console.log('Periodic rank refresh for current user...');
-        const tokens = await window.electronAPI.fetchTokens();
-        const rank = await apiRef.current.getPlayerRank(tokens.puuid);
-        
-        // Update current user with fresh rank data
-        setCurrentUser(prev => prev ? { ...prev, rank } : null);
-        
-        // Update cache
-        if (userDataCache && userDataCache.puuid === tokens.puuid) {
-          setUserDataCache({
-            ...userDataCache,
-            userData: { ...userDataCache.userData, rank },
-            timestamp: Date.now()
-          });
-        }
-      } catch (error) {
-        console.error('Failed to refresh user rank:', error);
-      }
-    };
-    
-    // Refresh rank every 2 minutes
-    const interval = setInterval(refreshUserRank, 2 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [isConnected, currentUser?.puuid]);
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);

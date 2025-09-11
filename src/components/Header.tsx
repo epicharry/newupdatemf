@@ -97,7 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'bg-blue-400/20 border-blue-400/30'
               }
             `}>
-              {currentUser?.rank && currentUser.rank.tier > 0 ? (
+              {currentUser?.rank ? (
                 <img 
                   src={`./rank-icons/${currentUser.rank.rank.toLowerCase().replace(' ', '')}.png`}
                   alt={currentUser.rank.rank}
@@ -110,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                 />
               ) : null}
-              <User className={`w-8 h-8 text-blue-500 ${currentUser?.rank && currentUser.rank.tier > 0 ? 'hidden' : ''}`} />
+              <User className={`w-8 h-8 text-blue-500 ${currentUser?.rank ? 'hidden' : ''}`} />
               {/* Sparkle animation */}
               <div className="absolute -top-1 -right-1">
                 <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />

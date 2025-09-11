@@ -279,87 +279,67 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
           </div>
 
           {/* Compact Horizontal Rank Card */}
-          {player.rank && player.rank.tier > 0 ? (
-            <div className="flex items-center justify-center">
-              <div
-                className={`
-                  px-6 py-4 rounded-2xl backdrop-blur-sm border max-w-sm w-full
-                  ${isDarkMode ? 'bg-slate-800/60 border-slate-700/50' : 'bg-white/40 border-white/50'}
-                `}
-              >
-                <div className="flex items-center space-x-4">
-                  {/* Rank Icon - Left Side */}
-                  <div className="flex-shrink-0">
-                    <img 
-                      src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}.png`}
-                      alt={player.rank.rank}
-                      className="w-12 h-12"
-                      draggable={false}
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
+          <div className="flex items-center justify-center">
+            <div
+              className={`
+                px-6 py-4 rounded-2xl backdrop-blur-sm border max-w-sm w-full
+                ${isDarkMode ? 'bg-slate-800/60 border-slate-700/50' : 'bg-white/40 border-white/50'}
+              `}
+            >
+              <div className="flex items-center space-x-4">
+                {/* Rank Icon - Left Side */}
+                <div className="flex-shrink-0">
+                  <img 
+                    src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}.png`}
+                    alt={player.rank.rank}
+                    className="w-12 h-12"
+                    draggable={false}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                </div>
+                
+                {/* Rank Info - Right Side */}
+                <div className="flex-1 min-w-0">
+                  {/* Rank Name */}
+                  <div className={`text-xl font-bold mb-1 ${getRankColor(player.rank.tier)}`}>
+                    {player.rank.rank}
                   </div>
                   
-                  {/* Rank Info - Right Side */}
-                  <div className="flex-1 min-w-0">
-                    {/* Rank Name */}
-                    <div className={`text-xl font-bold mb-1 ${getRankColor(player.rank.tier)}`}>
-                      {player.rank.rank}
-                    </div>
-                    
-                    {/* Current RR */}
-                    <div className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {player.rank.rr} / 100 RR
-                    </div>
-                    
-                    {/* Compact Progress Bar */}
+                  {/* Current RR */}
+                  <div className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {player.rank.rr} / 100 RR
+                  </div>
+                  
+                  {/* Compact Progress Bar */}
+                  <div
+                    className={`
+                      w-full h-2 rounded-full overflow-hidden shadow-inner
+                      ${isDarkMode ? 'bg-slate-700/80' : 'bg-gray-300/80'}
+                    `}
+                  >
                     <div
                       className={`
-                        w-full h-2 rounded-full overflow-hidden shadow-inner
-                        ${isDarkMode ? 'bg-slate-700/80' : 'bg-gray-300/80'}
-                      `}
-                    >
-                      <div
-                        className={`
-                          h-full transition-all duration-1000 rounded-full ${
+                        h-full transition-all duration-1000 rounded-full ${
                         player.rank.tier > 0 
                           ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500' 
                           : 'bg-gray-400'
                       }`}
-                        style={{ width: `${player.rank.rr}%` }}
-                        draggable={false}
-                      />
-                    </div>
-                    
-                    {/* Progress Text */}
-                    <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                      {100 - player.rank.rr} RR to next rank
-                    </div>
+                      style={{ width: `${player.rank.rr}%` }}
+                      draggable={false}
+                    />
+                  </div>
+                  
+                  {/* Progress Text */}
+                  <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                    {100 - player.rank.rr} RR to next rank
                   </div>
                 </div>
               </div>
             </div>
-          ) : (
-            <div
-              className={`
-                px-6 py-4 rounded-2xl backdrop-blur-sm border max-w-sm w-full mx-auto text-center
-                ${isDarkMode ? 'bg-slate-800/60 border-slate-700/50' : 'bg-white/40 border-white/50'}
-              `}
-            >
-              <div className={`text-xl font-bold ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                Unranked
-              </div>
-              <div className={`text-sm ${
-                isDarkMode ? 'text-gray-500' : 'text-gray-500'
-              }`}>
-                Play competitive matches to get ranked
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Match History */}
