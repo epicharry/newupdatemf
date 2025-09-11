@@ -514,6 +514,7 @@ function App() {
           refreshCooldown={refreshCooldown}
           currentUser={currentUser}
           onViewPlayerSearch={handleViewPlayerSearch}
+          showMatchHistoryButton={isConnected && currentUser !== null}
         />
 
         {/* Emergency MOTD */}

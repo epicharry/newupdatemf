@@ -22,6 +22,26 @@ export const useValorantData = () => {
   
   const apiRef = useRef<ValorantAPI>(new ValorantAPI());
 
+  // Get current user rank when connected
+  useEffect(() => {
+    const getCurrentUserRank = async () => {
+      if (isConnected && !currentUserRank) {
+        try {
+          const tokens = await apiRef.current.getTokens();
+          if (tokens) {
+            const rank = await apiRef.current.getPlayerRank(tokens.puuid);
+            setCurrentUserRank(rank);
+            console.log('Current user rank fetched:', rank);
+          }
+        } catch (error) {
+          console.error('Failed to get current user rank:', error);
+        }
+      }
+    };
+    
+    getCurrentUserRank();
+  }, [isConnected, currentUserRank]);
+
   const updateData = async () => {
     try {
       // Always check database connection first
