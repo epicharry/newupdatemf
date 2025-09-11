@@ -168,6 +168,7 @@
       totalPlayers: matchData.players.length,
       refresh: manualRefresh,
       currentRegion: apiRef.current.getCurrentRegion(),
-      matchType: matchData.type
+      matchType: matchData.type,
+      currentUserRank
     };
   };

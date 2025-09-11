@@ -206,7 +206,7 @@ function App() {
   // Get current user PUUID when connected
   useEffect(() => {
     const getCurrentUserInfo = async () => {
-      if (isConnected && !currentUser && !isInitializing) {
+      if (isConnected && !currentUser && !isInitializing && currentUserRank) {
         try {
           const tokens = await window.electronAPI.fetchTokens();
           
@@ -222,23 +222,17 @@ function App() {
             return;
           }
 
-          // Use the existing API instance to get user's rank
-          console.log('=== FETCHING CURRENT USER RANK ===');
-          console.log('Current user PUUID:', tokens.puuid);
-          
-          // Get user's rank using the same logic as other players
-          const rank = await apiRef.current.getPlayerRank(tokens.puuid);
-          console.log('Current user rank result:', rank);
-          
           // Get user's name
-          const names = await apiRef.current.getPlayerNames([tokens.puuid]);
+          const api = new ValorantAPI();
+          await api.fetchTokens();
+          const names = await api.getPlayerNames([tokens.puuid]);
           const userName = names[tokens.puuid] || 'You';
           
           const userData: PlayerInfo = {
             puuid: tokens.puuid,
             name: userName,
             agent: '',
-            rank: rank,
+            rank: currentUserRank,
             teamId: ''
           };
           
@@ -263,7 +257,6 @@ function App() {
     };
     
     getCurrentUserInfo();
-  }, [isConnected, currentUser, isInitializing, userDataCache]);
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
