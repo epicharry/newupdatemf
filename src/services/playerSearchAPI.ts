@@ -139,7 +139,6 @@ export class PlayerSearchAPI {
     searchResult: PlayerSearchResult, 
     valorantAPI: any,
     usePlayerRegion: boolean = true
-    usePlayerRegion: boolean = true
   ): Promise<PlayerInfo> {
     try {
       console.log(`Converting search result for ${searchResult.name}#${searchResult.tag} from region: ${searchResult.region}`);
