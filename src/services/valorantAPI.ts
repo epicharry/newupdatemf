@@ -81,25 +81,13 @@ export class ValorantAPI {
   setRegionOverride(region: string, shard: string): void {
     this.currentRegion = region;
     this.currentShard = shard;
-    console.log(`ValorantAPI region override set to: ${region} (${shard})`);
-  }
-
-  async initializeWithTokens(tokens: ValorantTokens): Promise<void> {
-    this.tokens = tokens;
-    this.lastTokenFetch = Date.now();
-    console.log(`ValorantAPI initialized with tokens for region: ${this.currentRegion}`);
-  }
-
-  setRegionOverride(region: string, shard: string): void {
-    this.currentRegion = region;
-    this.currentShard = shard;
     console.log(`Region override set to: ${region} (${shard})`);
   }
 
   async initializeWithTokens(tokens: ValorantTokens): Promise<void> {
     this.tokens = tokens;
     this.lastTokenFetch = Date.now();
-    console.log(`API initialized with tokens for region: ${this.currentRegion}`);
+    console.log(`ValorantAPI initialized with tokens for region: ${this.currentRegion}`);
   }
 
   private async ensureValidTokens(): Promise<void> {

@@ -274,8 +274,11 @@ export class PlayerSearchAPI {
           const { ValorantAPI } = await import('./valorantAPI');
           apiToUse = new ValorantAPI();
           
-          // Get tokens from the existing API
-          const tokens = await valorantAPI.fetchTokens();
+          // Get tokens from the existing API (don't re-fetch, use existing)
+          const tokens = valorantAPI.getTokens();
+          if (!tokens) {
+            throw new Error('No tokens available for cross-region API');
+          }
           
           // Set the region for this specific API instance
           const playerShard = this.getShardFromRegion(playerRegion);
