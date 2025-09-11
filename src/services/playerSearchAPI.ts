@@ -171,25 +171,6 @@ export class PlayerSearchAPI {
         }
       }
       
-      let apiToUse = valorantAPI;
-      
-      if (usePlayerRegion && searchResult.region) {
-        // Create a new ValorantAPI instance with the player's region
-        const { ValorantAPI } = await import('../services/valorantAPI');
-        apiToUse = new ValorantAPI();
-        
-        // Get tokens from the existing API
-        const tokens = await valorantAPI.fetchTokens();
-        
-        // Set the region for this specific API instance
-        apiToUse.setRegionOverride(searchResult.region, this.getShardFromRegion(searchResult.region));
-        
-        // Initialize with tokens
-        await apiToUse.initializeWithTokens(tokens);
-        
-        console.log(`Using region ${searchResult.region} for player search: ${searchResult.name}#${searchResult.tag}`);
-      }
-      
       let rank: RankInfo = { tier: 0, rr: 0, rank: "Unranked" };
       
       try {
