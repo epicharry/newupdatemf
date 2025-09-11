@@ -24,6 +24,9 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
   const [showCompetitiveOnly, setShowCompetitiveOnly] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [playerRegion, setPlayerRegion] = useState<string>('');
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreMatches, setHasMoreMatches] = useState(true);
+  const [currentLimit, setCurrentLimit] = useState(10);
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -71,10 +74,13 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
       
       // Use cached data when available to reduce API calls
       const matchHistory = showCompetitiveOnly
-        ? await getProcessedCompetitiveHistory(player.puuid, 10, targetRegion) 
-        : await getProcessedMatchHistory(player.puuid, 10, targetRegion);
+        ? await getProcessedCompetitiveHistory(player.puuid, currentLimit, targetRegion) 
+        : await getProcessedMatchHistory(player.puuid, currentLimit, targetRegion);
       
       setMatches(matchHistory);
+      
+      // Check if we have fewer matches than requested (indicates no more matches available)
+      setHasMoreMatches(matchHistory.length === currentLimit);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load match history';
       
