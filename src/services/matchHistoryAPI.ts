@@ -435,7 +435,8 @@ export class MatchHistoryAPI {
       // Check if it's a custom game based on provisioning flow or queue ID
       if (matchDetails.matchInfo.provisioningFlow === 'CustomGame' ||
           matchDetails.matchInfo.ProvisioningFlow === 'CustomGame' ||
-          matchDetails.matchInfo.queueID === 'custom') {
+          matchDetails.matchInfo.queueID === 'custom' ||
+          matchDetails.matchInfo.queueID === 'CustomGame') {
         queueType = 'Custom Game';
       }
 

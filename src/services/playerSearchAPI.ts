@@ -48,11 +48,12 @@ export class PlayerSearchAPI {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
-        throw new Error('Request timed out after 10 seconds');
+        throw new Error('Request timed out after 15 seconds');
       }
       throw error;
     }
   }
+
   static async searchPlayerByUsername(username: string, tag: string): Promise<PlayerSearchResult | null> {
     const cacheKey = `${username}#${tag}`.toLowerCase();
     
