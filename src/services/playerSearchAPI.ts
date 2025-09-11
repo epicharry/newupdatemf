@@ -26,9 +26,9 @@ export class PlayerSearchAPI {
   private static readonly SEARCH_API_BASE = 'https://c4ldas.com.br/api/valorant';
   private static cache = new Map<string, { data: PlayerSearchResult; timestamp: number }>();
   private static readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
-  private static readonly REQUEST_TIMEOUT = 10000; // 10 seconds
+  private static readonly REQUEST_TIMEOUT = 15000; // 15 seconds
   private static readonly MAX_RETRIES = 3;
-  private static readonly RETRY_DELAY = 2000; // 2 seconds between retries
+  private static readonly RETRY_DELAY = 3000; // 3 seconds between retries
 
   private static async delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -77,7 +77,8 @@ export class PlayerSearchAPI {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'ValRadiant-App/1.0.0'
+            'User-Agent': 'ValRadiant-App/1.0.0',
+            'Cache-Control': 'no-cache'
           }
         }, this.REQUEST_TIMEOUT);
 
@@ -86,9 +87,9 @@ export class PlayerSearchAPI {
             throw new Error('Player not found. Please check the username and tag.');
           } else if (response.status === 429) {
             throw new Error('Too many requests. Please wait a moment and try again.');
-          } else if (response.status === 504 || response.status === 502 || response.status === 503) {
+          } else if (response.status === 504 || response.status === 502 || response.status === 503 || response.status === 500) {
             // Server errors - retry these
-            throw new Error(`Server temporarily unavailable (${response.status}). Retrying...`);
+            throw new Error(`Server error (${response.status}). Retrying...`);
           } else {
             throw new Error(`Search failed with status ${response.status}`);
           }
@@ -111,7 +112,8 @@ export class PlayerSearchAPI {
         
         // Don't retry for certain errors
         if (lastError.message.includes('Player not found') || 
-            lastError.message.includes('Too many requests')) {
+            lastError.message.includes('Too many requests') ||
+            lastError.message.includes('Request timed out')) {
           console.error('Player search failed (non-retryable):', lastError.message);
           throw lastError;
         }
@@ -119,7 +121,7 @@ export class PlayerSearchAPI {
         // If this is the last attempt, throw the error
         if (attempt === this.MAX_RETRIES) {
           console.error(`Player search failed after ${this.MAX_RETRIES} attempts:`, lastError.message);
-          throw new Error(`Search failed after ${this.MAX_RETRIES} attempts. ${lastError.message}`);
+          throw new Error(`Search failed after ${this.MAX_RETRIES} attempts. The search service may be temporarily unavailable. Please try again later.`);
         }
 
         // Wait before retrying (exponential backoff)
