@@ -208,32 +208,34 @@ function App() {
     const getCurrentUserInfo = async () => {
       if (isConnected && !currentUser && !isInitializing) {
         try {
+          console.log('=== FETCHING CURRENT USER INFO ===');
           const tokens = await window.electronAPI.fetchTokens();
+          console.log('Current user PUUID:', tokens.puuid);
           
           // Check cache first (cache for 5 minutes)
           const now = Date.now();
-          const cacheValidDuration = 5 * 60 * 1000; // 5 minutes
+          const cacheValidDuration = 1 * 60 * 1000; // Reduced to 1 minute for current user
           
           if (userDataCache && 
               userDataCache.puuid === tokens.puuid && 
               (now - userDataCache.timestamp) < cacheValidDuration) {
             // Use cached data
+            console.log('Using cached user data:', userDataCache.userData);
             setCurrentUser(userDataCache.userData);
             return;
           }
 
-          // Initialize a fresh API instance for current user
-          const userAPI = new ValorantAPI();
-          await userAPI.fetchTokens();
+          console.log('Cache miss or expired, fetching fresh user data...');
           
-          console.log('Fetching current user rank data for:', tokens.puuid);
+          // Use the existing API instance from the hook
+          console.log('Fetching current user rank data using existing API...');
           
           // Get user's rank with fresh API instance
-          const rank = await userAPI.getPlayerRank(tokens.puuid);
+          const rank = await apiRef.current.getPlayerRank(tokens.puuid);
           console.log('Current user rank result:', rank);
           
           // Get user's name
-          const names = await userAPI.getPlayerNames([tokens.puuid]);
+          const names = await apiRef.current.getPlayerNames([tokens.puuid]);
           const userName = names[tokens.puuid] || 'You';
           console.log('Current user name:', userName);
           
@@ -267,7 +269,43 @@ function App() {
     };
     
     getCurrentUserInfo();
-  }, [isConnected, currentUser, isInitializing, userDataCache]);
+  }, [isConnected, currentUser, isInitializing, userDataCache, apiRef]);
+
+  // Periodic refresh of current user rank (every 2 minutes)
+  useEffect(() => {
+    if (!currentUser || !isConnected) return;
+
+    const refreshUserRank = async () => {
+      try {
+        console.log('=== PERIODIC USER RANK REFRESH ===');
+        const freshRank = await apiRef.current.getPlayerRank(currentUser.puuid);
+        console.log('Refreshed user rank:', freshRank);
+        
+        // Update current user with fresh rank if it changed
+        if (freshRank.tier !== currentUser.rank.tier || freshRank.rr !== currentUser.rank.rr) {
+          console.log('Rank changed, updating current user data');
+          const updatedUser = {
+            ...currentUser,
+            rank: freshRank
+          };
+          setCurrentUser(updatedUser);
+          
+          // Update cache
+          setUserDataCache({
+            puuid: currentUser.puuid,
+            userData: updatedUser,
+            timestamp: Date.now()
+          });
+        }
+      } catch (error) {
+        console.warn('Failed to refresh user rank:', error);
+      }
+    };
+
+    // Refresh every 2 minutes
+    const interval = setInterval(refreshUserRank, 2 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [currentUser, isConnected, apiRef]);
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
