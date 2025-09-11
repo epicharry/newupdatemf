@@ -23,7 +23,8 @@ export interface PlayerSearchResponse {
 }
 
 export class PlayerSearchAPI {
-  private static readonly SEARCH_API_BASE = 'https://c4ldas.com.br/api/valorant';
+  private static readonly DAK_API_BASE = 'https://dak.gg/valorant/_next/data/NBI2PzsY5xYJ9N-CnOO98/profile/revoke';
+  private static readonly FALLBACK_API_BASE = 'https://c4ldas.com.br/api/valorant';
   private static cache = new Map<string, { data: PlayerSearchResult; timestamp: number }>();
   private static readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
   private static readonly REQUEST_TIMEOUT = 15000; // 15 seconds
