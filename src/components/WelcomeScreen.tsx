@@ -119,7 +119,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           </h2>
 
           {/* User Rank */}
-          {currentUser?.rank && (
+          {currentUser?.rank && currentUser.rank.tier > 0 && (
             <div className={`
               flex items-center justify-center space-x-3 mb-6 p-4 rounded-xl backdrop-blur-sm border
               ${isDarkMode 

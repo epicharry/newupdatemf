@@ -164,14 +164,14 @@ export class ValorantAPI {
     
     // For current user, use shorter cache duration to get fresher rank data
     const isCurrentUser = this.tokens?.puuid === puuid;
-    const cacheDuration = isCurrentUser ? 60 * 1000 : this.CACHE_DURATION; // 1 minute for current user, 10 minutes for others
+    const cacheDuration = isCurrentUser ? 30 * 1000 : this.CACHE_DURATION; // 30 seconds for current user, 10 minutes for others
     
     if (cached && (now - cached.timestamp) < cacheDuration) {
       console.log(`Using cached rank for ${puuid}:`, cached.rank);
       return cached.rank;
     }
 
-    console.log(`Fetching fresh rank data for ${puuid}...`);
+    console.log(`Fetching fresh rank data for ${puuid}... (isCurrentUser: ${isCurrentUser})`);
 
     try {
       // Try competitive updates first
@@ -180,7 +180,7 @@ export class ValorantAPI {
       );
 
       if (competitiveResponse.status === 200 && competitiveResponse.data?.Matches) {
-        console.log(`Competitive updates response for ${puuid}:`, competitiveResponse.data);
+        console.log(`Competitive updates response for ${puuid} (${competitiveResponse.data.Matches?.length || 0} matches):`, competitiveResponse.data);
         for (const match of competitiveResponse.data.Matches) {
           if (match.TierAfterUpdate > 0) {
             const rank = {
@@ -195,6 +195,7 @@ export class ValorantAPI {
             return rank;
           }
         }
+        console.log(`No valid competitive matches found for ${puuid} in competitive updates`);
       }
 
       // Fallback to current competitive tier
@@ -206,8 +207,19 @@ export class ValorantAPI {
       if (mmrResponse.status === 200 && mmrResponse.data?.QueueSkills?.competitive) {
         console.log(`MMR response for ${puuid}:`, mmrResponse.data);
         const competitive = mmrResponse.data.QueueSkills.competitive;
-        const currentTier = competitive.CompetitiveTier || competitive.CurrentSeasonTier || 0;
-        const currentRR = competitive.RankedRating || competitive.CurrentSeasonEndRankedRating || 0;
+        
+        // Try multiple fields for tier and RR
+        const currentTier = competitive.CompetitiveTier || 
+                           competitive.CurrentSeasonTier || 
+                           competitive.SeasonalInfoBySeasonID?.[Object.keys(competitive.SeasonalInfoBySeasonID || {})[0]]?.CompetitiveTier || 
+                           0;
+        
+        const currentRR = competitive.RankedRating || 
+                         competitive.CurrentSeasonEndRankedRating || 
+                         competitive.SeasonalInfoBySeasonID?.[Object.keys(competitive.SeasonalInfoBySeasonID || {})[0]]?.RankedRating || 
+                         0;
+        
+        console.log(`Extracted tier: ${currentTier}, RR: ${currentRR} for ${puuid}`);
 
         if (currentTier > 0) {
           const rank = {
@@ -226,11 +238,17 @@ export class ValorantAPI {
         const seasonalInfo = competitive.SeasonalInfoBySeasonID || {};
         console.log(`Seasonal info for ${puuid}:`, seasonalInfo);
         if (Object.keys(seasonalInfo).length > 0) {
-          const latestSeason = Object.values(seasonalInfo)[Object.values(seasonalInfo).length - 1] as any;
+          // Get the latest season (highest season ID)
+          const seasonIds = Object.keys(seasonalInfo).sort();
+          const latestSeasonId = seasonIds[seasonIds.length - 1];
+          const latestSeason = seasonalInfo[latestSeasonId] as any;
+          
+          console.log(`Latest season ${latestSeasonId} data:`, latestSeason);
+          
           if (latestSeason.CompetitiveTier > 0) {
             const rank = {
               tier: latestSeason.CompetitiveTier,
-              rr: latestSeason.RankedRating,
+              rr: latestSeason.RankedRating || 0,
               rank: RANKS[latestSeason.CompetitiveTier] || "Unranked"
             };
             
@@ -240,6 +258,8 @@ export class ValorantAPI {
             return rank;
           }
         }
+      } else {
+        console.log(`MMR endpoint failed for ${puuid}. Status: ${mmrResponse.status}`);
       }
     } catch (error) {
       console.error(`Rank fetch error for ${puuid}: ${error}`);
