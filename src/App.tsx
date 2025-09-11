@@ -60,7 +60,8 @@ function App() {
     matchDetected,
     totalPlayers,
     refresh,
-    currentRegion
+    currentRegion,
+    matchType
   } = useValorantData();
 
   // Cooldown timer effect
@@ -536,7 +537,7 @@ function App() {
             isDarkMode={isDarkMode}
             onPlayerClick={handlePlayerClick}
             currentUserPuuid={currentUser?.puuid}
-            matchType={matchData.type}
+            matchType={matchType}
           />
         )}
 
