@@ -114,6 +114,7 @@ interface PlayerGridLayoutProps {
   isDarkMode: boolean;
   onPlayerClick?: (player: PlayerInfo) => void;
   currentUserPuuid?: string;
+  matchType?: 'pregame' | 'live' | 'none';
 }
 
 export const PlayerGridLayout: React.FC<PlayerGridLayoutProps> = ({
@@ -121,12 +122,30 @@ export const PlayerGridLayout: React.FC<PlayerGridLayoutProps> = ({
   enemyPlayers,
   isDarkMode,
   onPlayerClick,
-  currentUserPuuid
+  currentUserPuuid,
+  matchType
 }) => {
-  // Check if this is a team-based mode (has enemy players) or free-for-all (like Deathmatch)
-  const isTeamMode = enemyPlayers.length > 0;
+  // During agent select (pregame), only show teammates in one section
+  // During live match, show teams separately if there are enemies
+  // For deathmatch, split players into two columns
+  const isAgentSelect = matchType === 'pregame';
+  const isTeamMode = enemyPlayers.length > 0 && !isAgentSelect;
+  const isDeathmatch = allPlayers.length > 0 && enemyPlayers.length === 0 && matchType === 'live';
   
-  if (isTeamMode) {
+  if (isAgentSelect) {
+    // Agent Select: Show all teammates in one centered section
+    return (
+      <div className="max-w-4xl mx-auto">
+        <MyTeamSection
+          title="Your Team"
+          players={allPlayers}
+          isMyTeam={true}
+          isDarkMode={isDarkMode}
+          onPlayerClick={onPlayerClick}
+        />
+      </div>
+    );
+  } else if (isTeamMode) {
     // Normal team vs team layout
     return (
       <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8">
@@ -146,7 +165,7 @@ export const PlayerGridLayout: React.FC<PlayerGridLayoutProps> = ({
         />
       </div>
     );
-  } else {
+  } else if (isDeathmatch) {
     // Free-for-all mode (like Deathmatch) - split players into two columns
     const sortedPlayers = [...allPlayers].sort((a, b) => {
       // Put current user first
@@ -174,6 +193,19 @@ export const PlayerGridLayout: React.FC<PlayerGridLayoutProps> = ({
           players={rightPlayers}
           isMyTeam={false}
           icon={<Users className="w-6 h-6" />}
+          isDarkMode={isDarkMode}
+          onPlayerClick={onPlayerClick}
+        />
+      </div>
+    );
+  } else {
+    // Fallback: single team layout
+    return (
+      <div className="max-w-4xl mx-auto">
+        <MyTeamSection
+          title="Players"
+          players={allPlayers}
+          isMyTeam={true}
           isDarkMode={isDarkMode}
           onPlayerClick={onPlayerClick}
         />

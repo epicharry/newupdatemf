@@ -536,6 +536,7 @@ function App() {
             isDarkMode={isDarkMode}
             onPlayerClick={handlePlayerClick}
             currentUserPuuid={currentUser?.puuid}
+            matchType={matchData.type}
           />
         )}
 
