@@ -78,8 +78,8 @@ export class MatchHistoryAPI {
   private tokens: ValorantTokens | null = null;
   private lastTokenRefresh: number = 0;
   private readonly TOKEN_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
-  public region: string = DEFAULT_REGION;
-  public shard: string = DEFAULT_SHARD;
+  private region: string = DEFAULT_REGION;
+  private shard: string = DEFAULT_SHARD;
 
   constructor(tokens: ValorantTokens, region?: string, shard?: string) {
     this.tokens = tokens;
@@ -399,6 +399,7 @@ export class MatchHistoryAPI {
       return null;
     }
   }
+  
   async getProcessedCompetitiveHistory(puuid: string, limit: number = 10): Promise<ProcessedMatch[]> {
     // Always fetch fresh data for competitive history
     const allMatches = await this.getProcessedMatchHistory(puuid, limit);
