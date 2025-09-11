@@ -214,7 +214,7 @@ export class PlayerSearchAPI {
         const data: PlayerSearchResponse = await response.json();
         
         if (data.status !== 200 || !data.data) {
-          throw new Error('Player not found or invalid response from search API.');
+          throw new Error('Player not found. Please check the username and try again.');
         }
 
         // Cache the result on success
