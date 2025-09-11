@@ -222,16 +222,20 @@ function App() {
             return;
           }
 
-          // Only fetch if we don't have cached data or it's stale
+          // Always fetch fresh data for current user rank
+          console.log('Fetching current user rank data...');
           const api = new ValorantAPI();
           await api.fetchTokens();
           
-          // Get user's rank (this is the expensive call)
+          // Get user's rank with detailed logging
+          console.log('Getting rank for current user:', tokens.puuid);
           const rank = await api.getPlayerRank(tokens.puuid);
+          console.log('Current user rank result:', rank);
           
           // Get user's name
           const names = await api.getPlayerNames([tokens.puuid]);
           const userName = names[tokens.puuid] || 'You';
+          console.log('Current user name:', userName);
           
           const userData: PlayerInfo = {
             puuid: tokens.puuid,
@@ -240,6 +244,8 @@ function App() {
             rank: rank,
             teamId: ''
           };
+          
+          console.log('Setting current user data:', userData);
           
           // Cache the data
           setUserDataCache({
@@ -260,7 +266,7 @@ function App() {
     };
     
     getCurrentUserInfo();
-  }, [isConnected, currentUser, isInitializing, userDataCache]);
+  }, [isConnected, currentUser, isInitializing]); // Removed userDataCache dependency to allow fresh fetches
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
