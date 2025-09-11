@@ -81,13 +81,25 @@ export class ValorantAPI {
   setRegionOverride(region: string, shard: string): void {
     this.currentRegion = region;
     this.currentShard = shard;
-    console.log(`Region override set to: ${region} (${shard})`);
+    console.log(`ValorantAPI region override set to: ${region} (${shard})`);
   }
 
   async initializeWithTokens(tokens: ValorantTokens): Promise<void> {
     this.tokens = tokens;
     this.lastTokenFetch = Date.now();
     console.log(`ValorantAPI initialized with tokens for region: ${this.currentRegion}`);
+  }
+
+  setRegionOverride(region: string, shard: string): void {
+    this.currentRegion = region;
+    this.currentShard = shard;
+    console.log(`Region override set to: ${region} (${shard})`);
+  }
+
+  async initializeWithTokens(tokens: ValorantTokens): Promise<void> {
+    this.tokens = tokens;
+    this.lastTokenFetch = Date.now();
+    console.log(`API initialized with tokens for region: ${this.currentRegion}`);
   }
 
   private async ensureValidTokens(): Promise<void> {
@@ -179,15 +191,12 @@ export class ValorantAPI {
     }
 
     try {
-      console.log(`Fetching rank for ${puuid} using region: ${this.currentRegion}`);
-      
       // Try competitive updates first
       const competitiveResponse = await this.makeRequestWithRetry(
         `https://pd.${this.currentRegion}.a.pvp.net/mmr/v1/players/${puuid}/competitiveupdates`
       );
 
       if (competitiveResponse.status === 200 && competitiveResponse.data?.Matches) {
-        console.log(`Found ${competitiveResponse.data.Matches.length} competitive matches for ${puuid}`);
         for (const match of competitiveResponse.data.Matches) {
           if (match.TierAfterUpdate > 0) {
             const rank = {
@@ -196,7 +205,6 @@ export class ValorantAPI {
               rank: RANKS[match.TierAfterUpdate] || "Unranked"
             };
             
-            console.log(`Found rank from competitive updates for ${puuid}:`, rank);
             // Cache the result
             this.rankCache.set(puuid, { rank, timestamp: now });
             return rank;
@@ -211,10 +219,8 @@ export class ValorantAPI {
 
       if (mmrResponse.status === 200 && mmrResponse.data?.QueueSkills?.competitive) {
         const competitive = mmrResponse.data.QueueSkills.competitive;
-        console.log(`MMR response for ${puuid}:`, competitive);
-        
         const currentTier = competitive.CurrentSeasonTier || 0;
-        const currentRR = competitive.CurrentSeasonEndRankedRating || competitive.RankedRating || 0;
+        const currentRR = competitive.CurrentSeasonEndRankedRating || 0;
 
         if (currentTier > 0) {
           const rank = {
@@ -223,7 +229,6 @@ export class ValorantAPI {
             rank: RANKS[currentTier] || "Unranked"
           };
           
-          console.log(`Found rank from MMR for ${puuid}:`, rank);
           // Cache the result
           this.rankCache.set(puuid, { rank, timestamp: now });
           return rank;
@@ -232,21 +237,14 @@ export class ValorantAPI {
         // Final fallback to seasonal info
         const seasonalInfo = competitive.SeasonalInfoBySeasonID || {};
         if (Object.keys(seasonalInfo).length > 0) {
-          // Get the most recent season (highest season ID)
-          const seasonIds = Object.keys(seasonalInfo).map(id => parseInt(id)).sort((a, b) => b - a);
-          const latestSeasonId = seasonIds[0];
-          const latestSeason = seasonalInfo[latestSeasonId] as any;
-          
-          console.log(`Checking seasonal info for ${puuid}, latest season:`, latestSeason);
-          
+          const latestSeason = Object.values(seasonalInfo)[Object.values(seasonalInfo).length - 1] as any;
           if (latestSeason.CompetitiveTier > 0) {
             const rank = {
               tier: latestSeason.CompetitiveTier,
-              rr: latestSeason.RankedRating || 0,
+              rr: latestSeason.RankedRating,
               rank: RANKS[latestSeason.CompetitiveTier] || "Unranked"
             };
             
-            console.log(`Found rank from seasonal info for ${puuid}:`, rank);
             // Cache the result
             this.rankCache.set(puuid, { rank, timestamp: now });
             return rank;
@@ -254,7 +252,7 @@ export class ValorantAPI {
         }
       }
     } catch (error) {
-      console.error(`Rank fetch error for ${puuid} in region ${this.currentRegion}: ${error}`);
+      console.error(`Rank fetch error for ${puuid}: ${error}`);
       
       // If we have cached data, return it even if stale during errors
       if (cached) {
@@ -263,7 +261,6 @@ export class ValorantAPI {
       }
     }
 
-    console.log(`No rank found for ${puuid}, returning default unranked`);
     const defaultRank = { tier: 0, rr: 0, rank: "Unranked" };
     // Cache the default rank to avoid repeated failed requests
     this.rankCache.set(puuid, { rank: defaultRank, timestamp: now });

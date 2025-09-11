@@ -24,9 +24,6 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
   const [showCompetitiveOnly, setShowCompetitiveOnly] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [playerRegion, setPlayerRegion] = useState<string>('');
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMoreMatches, setHasMoreMatches] = useState(true);
-  const [currentLimit, setCurrentLimit] = useState(10);
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -74,13 +71,10 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
       
       // Use cached data when available to reduce API calls
       const matchHistory = showCompetitiveOnly
-        ? await getProcessedCompetitiveHistory(player.puuid, currentLimit, targetRegion) 
-        : await getProcessedMatchHistory(player.puuid, currentLimit, targetRegion);
+        ? await getProcessedCompetitiveHistory(player.puuid, 10, targetRegion) 
+        : await getProcessedMatchHistory(player.puuid, 10, targetRegion);
       
       setMatches(matchHistory);
-      
-      // Check if we have fewer matches than requested (indicates no more matches available)
-      setHasMoreMatches(matchHistory.length === currentLimit);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load match history';
       
@@ -675,51 +669,6 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
             ))
           )}
         </div>
-
-        {/* Load More Button */}
-        {!isLoading && matches.length > 0 && hasMoreMatches && (
-          <div className="text-center mt-8">
-            <button
-              onClick={loadMoreMatches}
-              disabled={isLoadingMore}
-              className={`
-                px-8 py-4 rounded-xl font-medium transition-all duration-300
-                backdrop-blur-sm border hover:scale-105 active:scale-95
-                disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50
-                ${isDarkMode 
-                  ? 'bg-blue-600/30 border-blue-500/50 text-blue-300 hover:bg-blue-600/40' 
-                  : 'bg-blue-500/30 border-blue-400/50 text-blue-700 hover:bg-blue-500/40'
-                }
-              `}
-            >
-              {isLoadingMore ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span>Loading More Matches...</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <span>Load More Matches</span>
-                </div>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* End of matches indicator */}
-        {!isLoading && matches.length > 0 && !hasMoreMatches && (
-          <div className="text-center mt-8">
-            <div className={`
-              px-6 py-3 rounded-xl backdrop-blur-sm border
-              ${isDarkMode 
-                ? 'bg-slate-800/40 border-slate-700/50 text-gray-400' 
-                : 'bg-white/20 border-white/30 text-gray-600'
-              }
-            `}>
-              <span>No more matches to load</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

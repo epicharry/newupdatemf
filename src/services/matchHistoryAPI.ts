@@ -507,8 +507,7 @@ export const getProcessedMatchHistory = async (puuid: string, limit: number = 10
   // If a specific region is provided, create a new API instance for that region
   if (region && region !== matchHistoryAPI.region) {
     console.log(`Creating region-specific API for ${region} to fetch match history for ${puuid}`);
-    // Get fresh tokens from the main API instead of using potentially stale ones
-    const tokens = await window.electronAPI.fetchTokens();
+    const tokens = matchHistoryAPI.tokens;
     if (tokens) {
       const regionShard = getShardFromRegion(region);
       const regionAPI = new MatchHistoryAPI(tokens, region, regionShard);
@@ -525,8 +524,7 @@ export const getProcessedCompetitiveHistory = async (puuid: string, limit: numbe
   // If a specific region is provided, create a new API instance for that region
   if (region && region !== matchHistoryAPI.region) {
     console.log(`Creating region-specific API for ${region} to fetch competitive history for ${puuid}`);
-    // Get fresh tokens from the main API instead of using potentially stale ones
-    const tokens = await window.electronAPI.fetchTokens();
+    const tokens = matchHistoryAPI.tokens;
     if (tokens) {
       const regionShard = getShardFromRegion(region);
       const regionAPI = new MatchHistoryAPI(tokens, region, regionShard);
