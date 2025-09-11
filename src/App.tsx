@@ -222,15 +222,18 @@ function App() {
             return;
           }
 
-          // Always fetch fresh data for current user rank
-          console.log('Fetching current user rank data...');
+          // Initialize a fresh API instance for current user
+          const userAPI = new ValorantAPI();
+          await userAPI.fetchTokens();
           
-          // Use the existing API instance from the hook
-          const rank = await apiRef.current.getPlayerRank(tokens.puuid);
+          console.log('Fetching current user rank data for:', tokens.puuid);
+          
+          // Get user's rank with fresh API instance
+          const rank = await userAPI.getPlayerRank(tokens.puuid);
           console.log('Current user rank result:', rank);
           
           // Get user's name
-          const names = await apiRef.current.getPlayerNames([tokens.puuid]);
+          const names = await userAPI.getPlayerNames([tokens.puuid]);
           const userName = names[tokens.puuid] || 'You';
           console.log('Current user name:', userName);
           
@@ -245,7 +248,7 @@ function App() {
           
           console.log('Setting current user data:', userData);
           
-          // Cache the data
+          // Cache the data for shorter duration for current user
           setUserDataCache({
             puuid: tokens.puuid,
             userData,
@@ -264,7 +267,6 @@ function App() {
     };
     
     getCurrentUserInfo();
-  }, [isConnected, currentUser, isInitializing, userDataCache]);
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
