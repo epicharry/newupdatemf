@@ -56,12 +56,12 @@ export const PlayerSearchPage: React.FC<PlayerSearchPageProps> = ({
       setIsSearching(true);
       setError('');
 
-      // Initialize Valorant API to get rank data
+      // Get the existing Valorant API instance
       const valorantAPI = new ValorantAPI();
       await valorantAPI.fetchTokens();
 
-      // Convert search result to PlayerInfo
-      const playerInfo = await PlayerSearchAPI.convertToPlayerInfo(searchResult, valorantAPI);
+      // Convert search result to PlayerInfo using the player's region
+      const playerInfo = await PlayerSearchAPI.convertToPlayerInfo(searchResult, valorantAPI, true);
       setSelectedPlayer(playerInfo);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load player profile';

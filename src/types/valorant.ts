@@ -24,6 +24,7 @@ export interface PlayerInfo {
   rank: RankInfo;
   teamId: string;
   isCurrentUser?: boolean;
+  playerRegion?: string;
 }
 
 export interface MatchData {

@@ -137,16 +137,67 @@ export class PlayerSearchAPI {
 
   static async convertToPlayerInfo(
     searchResult: PlayerSearchResult, 
-    valorantAPI: any
+    valorantAPI: any,
+    usePlayerRegion: boolean = true
+    usePlayerRegion: boolean = true
   ): Promise<PlayerInfo> {
     try {
-      // Get player's rank using the existing Valorant API
+      console.log(`Converting search result for ${searchResult.name}#${searchResult.tag} from region: ${searchResult.region}`);
+      
+      // Create a new API instance with the player's region if needed
+      let apiToUse = valorantAPI;
+      
+      if (usePlayerRegion && searchResult.region) {
+        const playerRegion = searchResult.region.toLowerCase();
+        const currentRegion = valorantAPI.getCurrentRegion();
+        
+        if (playerRegion !== currentRegion) {
+          console.log(`Player is from different region (${playerRegion} vs ${currentRegion}), creating region-specific API`);
+          
+          // Import ValorantAPI dynamically to avoid circular imports
+          const { ValorantAPI } = await import('./valorantAPI');
+          apiToUse = new ValorantAPI();
+          
+          // Get tokens from the existing API
+          const tokens = await valorantAPI.fetchTokens();
+          
+          // Set the region for this specific API instance
+          const playerShard = this.getShardFromRegion(playerRegion);
+          apiToUse.setRegionOverride(playerRegion, playerShard);
+          
+          // Initialize with tokens
+          await apiToUse.initializeWithTokens(tokens);
+          
+          console.log(`Created region-specific API for ${playerRegion} (${playerShard})`);
+        }
+      }
+      
+      let apiToUse = valorantAPI;
+      
+      if (usePlayerRegion && searchResult.region) {
+        // Create a new ValorantAPI instance with the player's region
+        const { ValorantAPI } = await import('../services/valorantAPI');
+        apiToUse = new ValorantAPI();
+        
+        // Get tokens from the existing API
+        const tokens = await valorantAPI.fetchTokens();
+        
+        // Set the region for this specific API instance
+        apiToUse.setRegionOverride(searchResult.region, this.getShardFromRegion(searchResult.region));
+        
+        // Initialize with tokens
+        await apiToUse.initializeWithTokens(tokens);
+        
+        console.log(`Using region ${searchResult.region} for player search: ${searchResult.name}#${searchResult.tag}`);
+      }
+      
       let rank: RankInfo = { tier: 0, rr: 0, rank: "Unranked" };
       
       try {
-        rank = await valorantAPI.getPlayerRank(searchResult.puuid);
+        rank = await apiToUse.getPlayerRank(searchResult.puuid);
+        console.log(`Fetched rank for ${searchResult.name}#${searchResult.tag}:`, rank);
       } catch (error) {
-        console.warn('Failed to get player rank:', error);
+        console.warn(`Failed to get player rank for ${searchResult.name}#${searchResult.tag}:`, error);
         // Use default unranked if rank fetch fails
       }
 
@@ -156,7 +207,8 @@ export class PlayerSearchAPI {
         agent: '', // Will be filled when viewing match history
         rank,
         teamId: '',
-        agentImageUrl: searchResult.card.large // Use player card as avatar
+        agentImageUrl: searchResult.card.large, // Use player card as avatar
+        playerRegion: searchResult.region // Store the player's region for match history
       };
     } catch (error) {
       console.error('Failed to convert search result to player info:', error);
@@ -166,5 +218,18 @@ export class PlayerSearchAPI {
 
   static clearCache(): void {
     this.cache.clear();
+  }
+
+  private static getShardFromRegion(region: string): string {
+    const regionToShard: Record<string, string> = {
+      'na': 'na',
+      'eu': 'eu', 
+      'ap': 'ap',
+      'kr': 'kr',
+      'br': 'br',
+      'latam': 'latam'
+    };
+    
+    return regionToShard[region.toLowerCase()] || region.toLowerCase();
   }
 }

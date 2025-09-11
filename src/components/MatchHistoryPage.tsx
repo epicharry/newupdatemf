@@ -23,6 +23,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
   const [error, setError] = useState<string>('');
   const [showCompetitiveOnly, setShowCompetitiveOnly] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
+  const [playerRegion, setPlayerRegion] = useState<string>('');
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -39,10 +40,39 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
       setIsLoading(true);
       setError('');
       
+      // Check if this player has a specific region (from player search)
+      let targetRegion = '';
+      if (player.playerRegion) {
+        targetRegion = player.playerRegion;
+        setPlayerRegion(targetRegion);
+        console.log(`Using player's region: ${targetRegion} for match history`);
+      }
+      
+      // Detect player region if we have agentImageUrl (indicates this is from player search)
+      let detectedRegion = '';
+      if (player.agentImageUrl && player.agentImageUrl.includes('playercards')) {
+        // This player came from player search, try to detect their region
+        try {
+          const searchResult = await import('../services/playerSearchAPI').then(module => 
+            module.PlayerSearchAPI.searchPlayerByUsername(
+              player.name.split('#')[0], 
+              player.name.split('#')[1]
+            )
+          );
+          if (searchResult) {
+            detectedRegion = searchResult.region;
+            setPlayerRegion(detectedRegion);
+            console.log(`Detected player region: ${detectedRegion} for ${player.name}`);
+          }
+        } catch (regionError) {
+          console.warn('Failed to detect player region:', regionError);
+        }
+      }
+      
       // Use cached data when available to reduce API calls
       const matchHistory = showCompetitiveOnly
-        ? await getProcessedCompetitiveHistory(player.puuid, 10) // Reduced from 15 to 10
-        : await getProcessedMatchHistory(player.puuid, 10); // Reduced from 15 to 10
+        ? await getProcessedCompetitiveHistory(player.puuid, 10, targetRegion) 
+        : await getProcessedMatchHistory(player.puuid, 10, targetRegion);
       
       setMatches(matchHistory);
     } catch (err) {

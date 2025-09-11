@@ -78,14 +78,22 @@ export class MatchHistoryAPI {
   private tokens: ValorantTokens | null = null;
   private lastTokenRefresh: number = 0;
   private readonly TOKEN_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
-  private region: string = DEFAULT_REGION;
-  private shard: string = DEFAULT_SHARD;
+  public region: string = DEFAULT_REGION;
+  public shard: string = DEFAULT_SHARD;
+  public tokens: ValorantTokens | null = null;
 
   constructor(tokens: ValorantTokens, region?: string, shard?: string) {
     this.tokens = tokens;
     this.lastTokenRefresh = Date.now();
     if (region) this.region = region;
     if (shard) this.shard = shard;
+    console.log(`MatchHistoryAPI initialized with region: ${this.region} (${this.shard})`);
+  }
+
+  setRegion(region: string, shard: string): void {
+    this.region = region;
+    this.shard = shard;
+    console.log(`MatchHistoryAPI region updated to: ${region} (${shard})`);
   }
 
   private getHeaders(): Record<string, string> {
@@ -492,17 +500,54 @@ export const getMatchDetailsForDisplay = async (matchId: string, targetPuuid: st
   if (!matchHistoryAPI) return null;
   return matchHistoryAPI.getMatchDetailsForDisplay(matchId, targetPuuid);
 };
-export const getProcessedMatchHistory = async (puuid: string, limit: number = 10): Promise<ProcessedMatch[]> => {
+
+export const getProcessedMatchHistory = async (puuid: string, limit: number = 10, region?: string): Promise<ProcessedMatch[]> => {
   if (!matchHistoryAPI) return [];
+  
+  // If a specific region is provided, create a new API instance for that region
+  if (region && region !== matchHistoryAPI.region) {
+    console.log(`Creating region-specific API for ${region} to fetch match history for ${puuid}`);
+    const tokens = matchHistoryAPI.tokens;
+    if (tokens) {
+      const regionShard = getShardFromRegion(region);
+      const regionAPI = new MatchHistoryAPI(tokens, region, regionShard);
+      return regionAPI.getProcessedMatchHistory(puuid, limit);
+    }
+  }
+  
   return matchHistoryAPI.getProcessedMatchHistory(puuid, limit);
 };
 
-export const getProcessedCompetitiveHistory = async (puuid: string, limit: number = 10): Promise<ProcessedMatch[]> => {
+export const getProcessedCompetitiveHistory = async (puuid: string, limit: number = 10, region?: string): Promise<ProcessedMatch[]> => {
   if (!matchHistoryAPI) return [];
+  
+  // If a specific region is provided, create a new API instance for that region
+  if (region && region !== matchHistoryAPI.region) {
+    console.log(`Creating region-specific API for ${region} to fetch competitive history for ${puuid}`);
+    const tokens = matchHistoryAPI.tokens;
+    if (tokens) {
+      const regionShard = getShardFromRegion(region);
+      const regionAPI = new MatchHistoryAPI(tokens, region, regionShard);
+      return regionAPI.getProcessedCompetitiveHistory(puuid, limit);
+    }
+  }
+  
   return matchHistoryAPI.getProcessedCompetitiveHistory(puuid, limit);
 };
+
+function getShardFromRegion(region: string): string {
+  const regionToShard: Record<string, string> = {
+    'na': 'na',
+    'eu': 'eu', 
+    'ap': 'ap',
+    'kr': 'kr',
+    'br': 'br',
+    'latam': 'latam'
+  };
+  
+  return regionToShard[region.toLowerCase()] || region.toLowerCase();
+}
 
 export const getFullMatchData = async (matchId: string, puuid: string): Promise<ProcessedMatch | null> => {
   if (!matchHistoryAPI) return null;
   return matchHistoryAPI.getFullMatchData(matchId, puuid);
-}
