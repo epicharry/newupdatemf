@@ -78,8 +78,7 @@ export class PlayerSearchAPI {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'ValRadiant-App/1.0.0',
-            'Cache-Control': 'no-cache'
+            'User-Agent': 'ValRadiant-App/1.0.0'
           }
         }, this.REQUEST_TIMEOUT);
 
