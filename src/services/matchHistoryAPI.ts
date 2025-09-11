@@ -432,8 +432,9 @@ export class MatchHistoryAPI {
       // Determine queue type - handle custom games
       let queueType = QUEUE_TYPES[matchDetails.matchInfo.queueID] || 'Unknown';
       
-      // Check if it's a custom game based on provisioning flow
-      if (matchDetails.matchInfo.provisioningFlow === 'CustomGame' || 
+      // Check if it's a custom game based on provisioning flow or queue ID
+      if (matchDetails.matchInfo.provisioningFlow === 'CustomGame' ||
+          matchDetails.matchInfo.ProvisioningFlow === 'CustomGame' ||
           matchDetails.matchInfo.queueID === 'custom') {
         queueType = 'Custom Game';
       }

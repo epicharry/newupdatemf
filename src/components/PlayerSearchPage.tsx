@@ -195,7 +195,7 @@ export const PlayerSearchPage: React.FC<PlayerSearchPageProps> = ({
               </label>
               <input
                 type="text"
-                placeholder="MARVEL HARRY#harry"
+                placeholder="e.g., MARVEL HARRY#harry"
                 onChange={(e) => parseUsernameInput(e.target.value)}
                 className={`
                   w-full p-4 rounded-xl backdrop-blur-sm border transition-all duration-300
