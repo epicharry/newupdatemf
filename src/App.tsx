@@ -222,24 +222,28 @@ function App() {
             return;
           }
 
-          // Only fetch if we don't have cached data or it's stale
-          const api = new ValorantAPI();
-          await api.fetchTokens();
+          // Always fetch fresh data for current user rank
+          console.log('Fetching current user rank data...');
           
-          // Get user's rank (this is the expensive call)
-          const rank = await api.getPlayerRank(tokens.puuid);
+          // Use the existing API instance from the hook
+          const rank = await apiRef.current.getPlayerRank(tokens.puuid);
+          console.log('Current user rank result:', rank);
           
           // Get user's name
-          const names = await api.getPlayerNames([tokens.puuid]);
+          const names = await apiRef.current.getPlayerNames([tokens.puuid]);
           const userName = names[tokens.puuid] || 'You';
+          console.log('Current user name:', userName);
           
           const userData: PlayerInfo = {
             puuid: tokens.puuid,
             name: userName,
             agent: '',
             rank: rank,
-            teamId: ''
+            teamId: '',
+            agentImageUrl: undefined
           };
+          
+          console.log('Setting current user data:', userData);
           
           // Cache the data
           setUserDataCache({
