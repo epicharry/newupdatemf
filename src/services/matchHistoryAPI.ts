@@ -80,7 +80,6 @@ export class MatchHistoryAPI {
   private readonly TOKEN_REFRESH_INTERVAL = 2 * 60 * 1000; // 2 minutes
   public region: string = DEFAULT_REGION;
   public shard: string = DEFAULT_SHARD;
-  public tokens: ValorantTokens | null = null;
 
   constructor(tokens: ValorantTokens, region?: string, shard?: string) {
     this.tokens = tokens;
@@ -551,3 +550,4 @@ function getShardFromRegion(region: string): string {
 export const getFullMatchData = async (matchId: string, puuid: string): Promise<ProcessedMatch | null> => {
   if (!matchHistoryAPI) return null;
   return matchHistoryAPI.getFullMatchData(matchId, puuid);
+};
