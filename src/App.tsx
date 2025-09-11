@@ -267,47 +267,7 @@ function App() {
     };
     
     getCurrentUserInfo();
-  }, [isConnected, currentUser, isInitializing]);
-
-  // Separate effect to refresh current user rank periodically
-  useEffect(() => {
-    if (!currentUser || !isConnected) return;
-
-    const refreshUserRank = async () => {
-      try {
-        console.log('Refreshing current user rank...');
-        const userAPI = new ValorantAPI();
-        await userAPI.fetchTokens();
-        
-        const freshRank = await userAPI.getPlayerRank(currentUser.puuid);
-        console.log('Fresh rank data:', freshRank);
-        
-        // Update current user with fresh rank
-        setCurrentUser(prev => prev ? {
-          ...prev,
-          rank: freshRank
-        } : null);
-        
-        // Update cache
-        setUserDataCache(prev => prev ? {
-          ...prev,
-          userData: {
-            ...prev.userData,
-            rank: freshRank
-          },
-          timestamp: Date.now()
-        } : null);
-        
-      } catch (error) {
-        console.error('Failed to refresh user rank:', error);
-      }
-    };
-
-    // Refresh rank every 2 minutes
-    const rankRefreshInterval = setInterval(refreshUserRank, 2 * 60 * 1000);
-    
-    return () => clearInterval(rankRefreshInterval);
-  }, [currentUser?.puuid, isConnected]);
+  }, [isConnected, currentUser, isInitializing, userDataCache]);
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
