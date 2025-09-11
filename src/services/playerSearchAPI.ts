@@ -64,16 +64,119 @@ export class PlayerSearchAPI {
       return cached.data;
     }
 
-    const encodedUsername = encodeURIComponent(username);
-    const encodedTag = encodeURIComponent(tag);
-    const url = `${this.SEARCH_API_BASE}/puuid?player=${encodedUsername}&tag=${encodedTag}`;
+    // Try dak.gg API first
+    try {
+      console.log(`Trying dak.gg API for ${username}#${tag}`);
+      const dakResult = await this.searchWithDakAPI(username, tag);
+      if (dakResult) {
+        // Cache the result on success
+        this.cache.set(cacheKey, { data: dakResult, timestamp: Date.now() });
+        console.log(`Player search successful via dak.gg for ${username}#${tag}`);
+        return dakResult;
+      }
+    } catch (error) {
+      console.warn(`dak.gg API failed for ${username}#${tag}:`, error);
+    }
+
+    // Fallback to c4ldas API
+    console.log(`Falling back to c4ldas API for ${username}#${tag}`);
+    return this.searchWithFallbackAPI(username, tag);
+  }
+
+  private static async searchWithDakAPI(username: string, tag: string): Promise<PlayerSearchResult | null> {
+    // Format username-tag for dak.gg URL (spaces become %20, # becomes -)
+    const formattedName = `${username.replace(/\s+/g, '%20')}-${tag}`;
+    const url = `${this.DAK_API_BASE}/${formattedName}.json`;
 
     let lastError: Error | null = null;
 
     // Retry logic with exponential backoff
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
-        console.log(`Player search attempt ${attempt}/${this.MAX_RETRIES} for ${username}#${tag}`);
+        console.log(`dak.gg API attempt ${attempt}/${this.MAX_RETRIES} for ${username}#${tag}`);
+
+        const response = await this.fetchWithTimeout(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'ValRadiant-App/1.0.0'
+          }
+        }, this.REQUEST_TIMEOUT);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Player not found on dak.gg');
+          } else if (response.status === 429) {
+            throw new Error('Too many requests to dak.gg');
+          } else if (response.status >= 500) {
+            throw new Error(`dak.gg server error (${response.status})`);
+          } else {
+            throw new Error(`dak.gg API failed with status ${response.status}`);
+          }
+        }
+
+        const data = await response.json();
+        
+        if (!data.pageProps?.account) {
+          throw new Error('Invalid response from dak.gg API');
+        }
+
+        const account = data.pageProps.account;
+        
+        // Convert dak.gg response to our PlayerSearchResult format
+        const result: PlayerSearchResult = {
+          puuid: account.puuid,
+          region: account.activeShard || 'unknown',
+          account_level: account.accountLevel || 0,
+          name: account.gameName || username,
+          tag: account.tagLine || tag,
+          card: {
+            small: account.playerCard?.imageUrl || '',
+            large: account.playerCard?.imageUrl || '',
+            wide: account.playerCard?.imageUrl || '',
+            id: account.playerCard?.id || ''
+          },
+          last_update: account.syncedAt ? new Date(account.syncedAt).toLocaleDateString() : 'Unknown',
+          last_update_raw: account.syncedAt ? new Date(account.syncedAt).getTime() : Date.now()
+        };
+
+        return result;
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error occurred');
+        
+        // Don't retry for certain errors
+        if (lastError.message.includes('Player not found') || 
+            lastError.message.includes('Too many requests')) {
+          throw lastError;
+        }
+
+        // If this is the last attempt, throw the error
+        if (attempt === this.MAX_RETRIES) {
+          throw lastError;
+        }
+
+        // Wait before retrying (exponential backoff)
+        const delayMs = this.RETRY_DELAY * Math.pow(2, attempt - 1);
+        console.warn(`dak.gg API attempt ${attempt} failed: ${lastError.message}. Retrying in ${delayMs}ms...`);
+        await this.delay(delayMs);
+      }
+    }
+
+    throw lastError || new Error('dak.gg API failed for unknown reasons');
+  }
+
+  private static async searchWithFallbackAPI(username: string, tag: string): Promise<PlayerSearchResult | null> {
+    const encodedUsername = encodeURIComponent(username);
+    const encodedTag = encodeURIComponent(tag);
+    const url = `${this.FALLBACK_API_BASE}/puuid?player=${encodedUsername}&tag=${encodedTag}`;
+
+    let lastError: Error | null = null;
+
+    // Retry logic with exponential backoff
+    for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
+      try {
+        console.log(`Fallback API attempt ${attempt}/${this.MAX_RETRIES} for ${username}#${tag}`);
 
         const response = await this.fetchWithTimeout(url, {
           method: 'GET',
@@ -103,9 +206,10 @@ export class PlayerSearchAPI {
         }
 
         // Cache the result on success
+        const cacheKey = `${username}#${tag}`.toLowerCase();
         this.cache.set(cacheKey, { data: data.data, timestamp: Date.now() });
         
-        console.log(`Player search successful for ${username}#${tag} on attempt ${attempt}`);
+        console.log(`Fallback API search successful for ${username}#${tag} on attempt ${attempt}`);
         return data.data;
 
       } catch (error) {
@@ -115,25 +219,25 @@ export class PlayerSearchAPI {
         if (lastError.message.includes('Player not found') || 
             lastError.message.includes('Too many requests') ||
             lastError.message.includes('Request timed out')) {
-          console.error('Player search failed (non-retryable):', lastError.message);
+          console.error('Fallback API search failed (non-retryable):', lastError.message);
           throw lastError;
         }
 
         // If this is the last attempt, throw the error
         if (attempt === this.MAX_RETRIES) {
-          console.error(`Player search failed after ${this.MAX_RETRIES} attempts:`, lastError.message);
+          console.error(`Fallback API search failed after ${this.MAX_RETRIES} attempts:`, lastError.message);
           throw new Error(`Search failed after ${this.MAX_RETRIES} attempts. The search service may be temporarily unavailable. Please try again later.`);
         }
 
         // Wait before retrying (exponential backoff)
         const delayMs = this.RETRY_DELAY * Math.pow(2, attempt - 1);
-        console.warn(`Player search attempt ${attempt} failed: ${lastError.message}. Retrying in ${delayMs}ms...`);
+        console.warn(`Fallback API attempt ${attempt} failed: ${lastError.message}. Retrying in ${delayMs}ms...`);
         await this.delay(delayMs);
       }
     }
 
     // This should never be reached, but just in case
-    throw lastError || new Error('Search failed for unknown reasons');
+    throw lastError || new Error('Both search APIs failed');
   }
 
   static async convertToPlayerInfo(
