@@ -119,11 +119,21 @@ export class PlayerSearchAPI {
 
         const data = response.data;
         
-        if (!data?.pageProps?.account) {
-          throw new Error('Invalid response from dak.gg API');
+        if (!data?.pageProps?.account || 
+            Object.keys(data.pageProps.account).length === 0 ||
+            data?.pageProps?.dehydratedState?.queries?.some(q => 
+              q.state?.data?.error?.status === 404 && q.state?.data?.error?.message === "account"
+            )) {
+          throw new Error('Player not found on dak.gg');
         }
 
         const account = data.pageProps.account;
+        
+        // Additional validation to ensure we have essential data
+        if (!account.puuid || !account.gameName || !account.tagLine) {
+          throw new Error('Invalid response from dak.gg API');
+        }
+
         
         // Convert dak.gg response to our PlayerSearchResult format
         const result: PlayerSearchResult = {
