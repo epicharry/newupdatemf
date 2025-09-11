@@ -162,16 +162,9 @@ export class ValorantAPI {
     const cached = this.rankCache.get(puuid);
     const now = Date.now();
     
-    // Use shorter cache for current user (if this is the current user's PUUID)
-    const isCurrentUser = this.tokens && this.tokens.puuid === puuid;
-    const cacheTimeout = isCurrentUser ? 30 * 1000 : this.CACHE_DURATION; // 30 seconds for current user
-    
-    if (cached && (now - cached.timestamp) < cacheTimeout) {
-      console.log(`Using cached rank for ${isCurrentUser ? 'current user' : 'player'}: ${cached.rank.rank} (${cached.rank.rr} RR)`);
+    if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
       return cached.rank;
     }
-
-    console.log(`Fetching rank for ${isCurrentUser ? 'current user' : 'player'}: ${puuid}`);
 
     try {
       // Try competitive updates first
@@ -179,18 +172,8 @@ export class ValorantAPI {
         `https://pd.${this.currentRegion}.a.pvp.net/mmr/v1/players/${puuid}/competitiveupdates`
       );
 
-      console.log(`Competitive updates response status: ${competitiveResponse.status}`);
-      console.log('Competitive updates data:', competitiveResponse.data);
-
       if (competitiveResponse.status === 200 && competitiveResponse.data?.Matches) {
-        console.log('Checking competitive updates for rank...');
         for (const match of competitiveResponse.data.Matches) {
-          console.log('Match update:', {
-            TierAfterUpdate: match.TierAfterUpdate,
-            RankedRatingAfterUpdate: match.RankedRatingAfterUpdate,
-            TierBeforeUpdate: match.TierBeforeUpdate,
-            RankedRatingBeforeUpdate: match.RankedRatingBeforeUpdate
-          });
           if (match.TierAfterUpdate > 0) {
             const rank = {
               tier: match.TierAfterUpdate,
@@ -198,7 +181,6 @@ export class ValorantAPI {
               rank: RANKS[match.TierAfterUpdate] || "Unranked"
             };
             
-            console.log(`Found rank from competitive updates: ${rank.rank} (${rank.rr} RR)`);
             // Cache the result
             this.rankCache.set(puuid, { rank, timestamp: now });
             return rank;
@@ -207,42 +189,15 @@ export class ValorantAPI {
       }
 
       // Fallback to current competitive tier
-      console.log('Trying MMR endpoint for rank...');
       const mmrResponse = await this.makeRequestWithRetry(
         `https://pd.${this.currentRegion}.a.pvp.net/mmr/v1/players/${puuid}`
       );
 
-      console.log(`MMR response status: ${mmrResponse.status}`);
-      console.log('Full MMR response data:', mmrResponse.data);
-
       if (mmrResponse.status === 200 && mmrResponse.data?.QueueSkills?.competitive) {
         const competitive = mmrResponse.data.QueueSkills.competitive;
-        
-        // Try multiple fields for tier
-        const currentTier = competitive.CompetitiveTier || 
-                           competitive.CurrentSeasonTier || 
-                           competitive.SeasonalInfoBySeasonID?.[Object.keys(competitive.SeasonalInfoBySeasonID || {}).pop()]?.CompetitiveTier || 
-                           0;
-        
-        // Try multiple fields for RR
-        const currentRR = competitive.RankedRating || 
-                         competitive.CurrentSeasonEndRankedRating ||
-                         competitive.SeasonalInfoBySeasonID?.[Object.keys(competitive.SeasonalInfoBySeasonID || {}).pop()]?.RankedRating ||
-                         0;
+        const currentTier = competitive.CurrentSeasonTier || 0;
+        const currentRR = competitive.CurrentSeasonEndRankedRating || 0;
 
-        console.log(`MMR Response - Tier: ${currentTier}, RR: ${currentRR}`);
-        console.log('Full competitive data:', competitive);
-        
-        // Log all available fields for debugging
-        console.log('Available competitive fields:', Object.keys(competitive));
-        if (competitive.SeasonalInfoBySeasonID) {
-          console.log('Seasonal info seasons:', Object.keys(competitive.SeasonalInfoBySeasonID));
-          const latestSeasonKey = Object.keys(competitive.SeasonalInfoBySeasonID).pop();
-          if (latestSeasonKey) {
-            console.log('Latest season data:', competitive.SeasonalInfoBySeasonID[latestSeasonKey]);
-          }
-        }
-        
         if (currentTier > 0) {
           const rank = {
             tier: currentTier,
@@ -250,31 +205,22 @@ export class ValorantAPI {
             rank: RANKS[currentTier] || "Unranked"
           };
           
-          console.log(`Found rank from MMR: ${rank.rank} (${rank.rr} RR)`);
           // Cache the result
           this.rankCache.set(puuid, { rank, timestamp: now });
           return rank;
         }
 
         // Final fallback to seasonal info
-        console.log('Trying seasonal info for rank...');
         const seasonalInfo = competitive.SeasonalInfoBySeasonID || {};
-        console.log('Seasonal info object:', seasonalInfo);
         if (Object.keys(seasonalInfo).length > 0) {
-          const seasonKeys = Object.keys(seasonalInfo).sort();
-          const latestSeasonKey = seasonKeys[seasonKeys.length - 1];
-          const latestSeason = seasonalInfo[latestSeasonKey] as any;
-          console.log('Latest season key:', latestSeasonKey);
-          console.log('Latest season data:', latestSeason);
-          
+          const latestSeason = Object.values(seasonalInfo)[Object.values(seasonalInfo).length - 1] as any;
           if (latestSeason.CompetitiveTier > 0) {
             const rank = {
               tier: latestSeason.CompetitiveTier,
-              rr: latestSeason.RankedRating || 0,
+              rr: latestSeason.RankedRating,
               rank: RANKS[latestSeason.CompetitiveTier] || "Unranked"
             };
             
-            console.log(`Found rank from seasonal info: ${rank.rank} (${rank.rr} RR)`);
             // Cache the result
             this.rankCache.set(puuid, { rank, timestamp: now });
             return rank;
@@ -291,7 +237,6 @@ export class ValorantAPI {
       }
     }
 
-    console.log(`No rank found for ${puuid}, returning unranked`);
     const defaultRank = { tier: 0, rr: 0, rank: "Unranked" };
     // Cache the default rank to avoid repeated failed requests
     this.rankCache.set(puuid, { rank: defaultRank, timestamp: now });
