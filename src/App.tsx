@@ -61,7 +61,8 @@ function App() {
     totalPlayers,
     refresh,
     currentRegion,
-    matchType
+    matchType,
+    currentUserRank
   } = useValorantData();
 
   // Cooldown timer effect
@@ -257,6 +258,7 @@ function App() {
     };
     
     getCurrentUserInfo();
+  }, [isConnected, currentUser, isInitializing, currentUserRank, userDataCache]);
 
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
