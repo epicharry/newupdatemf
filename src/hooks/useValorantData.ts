@@ -106,6 +106,7 @@
         
         setIsConnected(false);
         setMatchDetected(false);
+        setCurrentUserRank(null);
         setMatchData({
           type: 'none',
           players: [],
