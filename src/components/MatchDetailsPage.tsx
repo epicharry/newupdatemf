@@ -741,6 +741,8 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
         return <Bomb className="w-3 h-3" />;
       case 'melee':
         return <Skull className="w-3 h-3" />;
+      case 'fall':
+        return <div className="w-3 h-3 text-xs">⬇️</div>;
       default:
         return <Target className="w-3 h-3" />;
     }
@@ -902,6 +904,14 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
                                  : 'bg-orange-500/15 border border-orange-400/30 text-orange-700'
                              }`}>
                                💥 SPIKE
+                             </span>
+                           ) : kill.finishingDamage.damageType === 'Fall' ? (
+                             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                               isDarkMode 
+                                 ? 'bg-gray-600/20 border border-gray-500/30 text-gray-400' 
+                                 : 'bg-gray-500/15 border border-gray-400/30 text-gray-700'
+                             }`}>
+                               ⬇️ FALL DAMAGE
                              </span>
                             ) : (
                               <span className={`text-xs px-2 py-1 rounded-full ${
