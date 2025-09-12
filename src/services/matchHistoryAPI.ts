@@ -168,17 +168,23 @@ export class MatchHistoryAPI {
 
   async getMatchHistory(puuid: string, startIndex: number = 0, endIndex: number = 20): Promise<MatchHistoryEntry[]> {
     try {
+      console.log(`🔍 [DEBUG] Fetching raw match history: PUUID=${puuid}, startIndex=${startIndex}, endIndex=${endIndex}`);
+      console.log(`🔍 [DEBUG] URL: https://pd.${this.region}.a.pvp.net/match-history/v1/history/${puuid}?startIndex=${startIndex}&endIndex=${endIndex}`);
+      
       const response = await this.makeRequestWithRetry(
         `https://pd.${this.region}.a.pvp.net/match-history/v1/history/${puuid}?startIndex=${startIndex}&endIndex=${endIndex}`
       );
 
       if (response.status === 200 && response.data?.History) {
+        console.log(`✅ [DEBUG] Match history API success: ${response.data.History.length} matches returned`);
         return response.data.History;
+      } else {
+        console.log(`❌ [DEBUG] Match history API failed. Status: ${response.status}, Data:`, response.data);
       }
       
       return [];
     } catch (error) {
-      console.error('Failed to fetch match history:', error);
+      console.error(`❌ [DEBUG] Match history API error for ${puuid}:`, error);
       return [];
     }
   }
@@ -238,31 +244,47 @@ export class MatchHistoryAPI {
     const cacheKey = `${puuid}-${limit}`;
     const cached = getCachedData(CACHE_CONFIG.processedMatches, cacheKey);
     if (cached) {
+      console.log(`✅ [DEBUG] Using cached match history for ${puuid} (${cached.length} matches)`);
       return cached;
     }
     
     try {
+      console.log(`🔍 [DEBUG] Fetching match history for PUUID: ${puuid}, limit: ${limit}`);
+      console.log(`🔍 [DEBUG] Using region: ${this.region}, shard: ${this.shard}`);
+      
       const history = await this.getMatchHistory(puuid, 0, limit);
+      console.log(`✅ [DEBUG] Raw match history fetched: ${history.length} matches`);
+      
       const processedMatches: ProcessedMatch[] = [];
 
       // Get competitive updates once for the user (not per match)
       let competitiveUpdates: CompetitiveUpdate[] = [];
       try {
+        console.log(`🔍 [DEBUG] Fetching competitive updates for RR data...`);
         competitiveUpdates = await this.getCompetitiveUpdates(puuid);
+        console.log(`✅ [DEBUG] Competitive updates fetched: ${competitiveUpdates.length} updates`);
       } catch (error) {
-        console.warn('Failed to fetch competitive updates, continuing without RR data:', error);
+        console.warn(`⚠️ [DEBUG] Failed to fetch competitive updates, continuing without RR data:`, error);
       }
 
+      console.log(`🔍 [DEBUG] Processing ${history.length} matches...`);
       for (const historyEntry of history) {
+        console.log(`🔍 [DEBUG] Processing match: ${historyEntry.MatchID}`);
         // Get full match details for each match
         const matchDetails = await this.getMatchDetails(historyEntry.MatchID);
         if (matchDetails) {
+          console.log(`✅ [DEBUG] Match details fetched for ${historyEntry.MatchID}`);
           const competitiveUpdate = competitiveUpdates.find(update => update.MatchID === historyEntry.MatchID);
           
           const processedMatch = this.processMatchData(matchDetails, puuid, competitiveUpdate);
           if (processedMatch) {
+            console.log(`✅ [DEBUG] Match processed successfully: ${processedMatch.mapName} - ${processedMatch.matchResult}`);
             processedMatches.push(processedMatch);
+          } else {
+            console.warn(`⚠️ [DEBUG] Failed to process match data for ${historyEntry.MatchID}`);
           }
+        } else {
+          console.warn(`⚠️ [DEBUG] Failed to fetch match details for ${historyEntry.MatchID}`);
         }
         
         // Add a small delay between match detail requests to avoid overwhelming the API
@@ -272,13 +294,14 @@ export class MatchHistoryAPI {
       }
 
       const sortedMatches = processedMatches.sort((a, b) => b.gameStartTime - a.gameStartTime);
+      console.log(`✅ [DEBUG] Final processed matches: ${sortedMatches.length} matches`);
       
       // Cache the result
       setCachedData(CACHE_CONFIG.processedMatches, cacheKey, sortedMatches);
       
       return sortedMatches;
     } catch (error) {
-      console.error('Failed to get processed match history:', error);
+      console.error(`❌ [DEBUG] Failed to get processed match history for ${puuid}:`, error);
       return [];
     }
   }
