@@ -80,7 +80,7 @@ export const MatchDetailsPage: React.FC<MatchDetailsPageProps> = ({
     if (tier <= 20) return 'text-[#8A59C2]'; // Diamond
     if (tier <= 23) return 'text-[#3BB273]'; // Ascendant
     if (tier <= 26) return 'text-[#C03B3B]'; // Immortal
-    return isDarkMode ? 'text-[#FADC45]' : 'text-[#D4AF37]'; // Radiant - darker gold for light mode
+    return 'text-[#FADC45]'; // Radiant
   };
 
   const processTimelineData = () => {
@@ -587,7 +587,7 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
               {matchDetails.matchInfo.isRanked && (
                 <div className="flex items-center space-x-2 mt-1">
                   <img 
-                   src={`./rank-icons/${(RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '') === 'radiant' ? 'radiant.png' : (RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '') + '1.png'}`}
+                    src={`./rank-icons/${(RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '')}.png`}
                     alt={RANKS[player.competitiveTier] || 'Unranked'}
                     className="w-5 h-5"
                     draggable={false}

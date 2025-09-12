@@ -25,7 +25,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
     if (tier <= 20) return 'text-[#8A59C2]'; // Diamond
     if (tier <= 23) return 'text-[#3BB273]'; // Ascendant
     if (tier <= 26) return 'text-[#C03B3B]'; // Immortal
-    return isDarkMode ? 'text-[#FADC45]' : 'text-[#D4AF37]'; // Radiant - darker gold for light mode
+    return 'text-[#FADC45]'; // Radiant
   };
 
   const getAgentColor = () => {
@@ -61,7 +61,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           {player.agentImageUrl ? (
             <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-white/20 hover:ring-white/40 transition-all duration-300">
               <img 
-               src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '') === 'radiant' ? 'radiant.png' : player.rank.rank.toLowerCase().replace(' ', '') + '1.png'}`}
+                src={player.agentImageUrl} 
                 alt={player.agent}
                 className="w-full h-full object-cover"
                 draggable={false}
@@ -108,7 +108,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           
           <div className="flex items-center space-x-2 mt-1">
             <img 
-              src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}1.png`}
+              src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}.png`}
               alt={player.rank.rank}
               className="w-5 h-5"
               draggable={false}

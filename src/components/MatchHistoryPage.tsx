@@ -107,7 +107,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
     if (tier <= 20) return 'text-blue-500'; // Diamond
     if (tier <= 23) return 'text-green-500'; // Ascendant
     if (tier <= 26) return 'text-purple-500'; // Immortal
-    return isDarkMode ? 'text-yellow-400' : 'text-yellow-600'; // Radiant - darker for light mode
+    return 'text-yellow-400'; // Radiant
   };
 
   const formatGameTime = (timestamp: number) => {
@@ -320,7 +320,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                 {/* Rank Icon - Left Side */}
                 <div className="flex-shrink-0">
                   <img 
-                    src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}1.png`}
+                    src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}.png`}
                     alt={player.rank.rank}
                     className="w-12 h-12"
                     draggable={false}
@@ -340,36 +340,32 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                   
                   {/* Current RR */}
                   <div className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {player.rank.tier === 27 ? `${player.rank.rr} RR` : `${player.rank.rr} / 100 RR`}
+                    {player.rank.rr} / 100 RR
                   </div>
                   
                   {/* Compact Progress Bar */}
-                  {player.rank.tier !== 27 && (
-                    <>
-                      <div
-                        className={`
-                          w-full h-2 rounded-full overflow-hidden shadow-inner
-                          ${isDarkMode ? 'bg-slate-700/80' : 'bg-gray-300/80'}
-                        `}
-                      >
-                        <div
-                          className={`
-                            h-full transition-all duration-1000 rounded-full ${
-                            player.rank.tier > 0 
-                              ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500' 
-                              : 'bg-gray-400'
-                          }`}
-                          style={{ width: `${player.rank.rr}%` }}
-                          draggable={false}
-                        />
-                      </div>
-                      
-                      {/* Progress Text */}
-                      <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                        {100 - player.rank.rr} RR to next rank
-                      </div>
-                    </>
-                  )}
+                  <div
+                    className={`
+                      w-full h-2 rounded-full overflow-hidden shadow-inner
+                      ${isDarkMode ? 'bg-slate-700/80' : 'bg-gray-300/80'}
+                    `}
+                  >
+                    <div
+                      className={`
+                        h-full transition-all duration-1000 rounded-full ${
+                        player.rank.tier > 0 
+                          ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500' 
+                          : 'bg-gray-400'
+                      }`}
+                      style={{ width: `${player.rank.rr}%` }}
+                      draggable={false}
+                    />
+                  </div>
+                  
+                  {/* Progress Text */}
+                  <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                    {100 - player.rank.rr} RR to next rank
+                  </div>
                 </div>
               </div>
             </div>
