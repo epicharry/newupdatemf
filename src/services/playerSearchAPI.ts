@@ -23,7 +23,6 @@ export interface PlayerSearchResponse {
 }
 
 export class PlayerSearchAPI {
-  private static readonly DAK_API_BASE = 'https://dak.gg/valorant/_next/data/NBI2PzsY5xYJ9N-CnOO98/profile/revoke';
   private static readonly FALLBACK_API_BASE = 'https://c4ldas.com.br/api/valorant';
   private static cache = new Map<string, { data: PlayerSearchResult; timestamp: number }>();
   private static readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -64,135 +63,12 @@ export class PlayerSearchAPI {
       return cached.data;
     }
 
-    // Try dak.gg API first
-    try {
-      console.log(`Trying dak.gg API for ${username}#${tag}`);
-      const dakResult = await this.searchWithDakAPI(username, tag);
-      if (dakResult) {
-        // Cache the result on success
-        this.cache.set(cacheKey, { data: dakResult, timestamp: Date.now() });
-        console.log(`Player search successful via dak.gg for ${username}#${tag}`);
-        return dakResult;
-      }
-    } catch (error) {
-      console.warn(`dak.gg API failed for ${username}#${tag}:`, error);
-    }
-
-    // Fallback to c4ldas API
-    console.log(`Falling back to c4ldas API for ${username}#${tag}`);
-    return this.searchWithFallbackAPI(username, tag);
+    // Use c4ldas API directly
+    console.log(`Using c4ldas API for ${username}#${tag}`);
+    return this.searchWithC4ldasAPI(username, tag);
   }
 
-  private static async searchWithDakAPI(username: string, tag: string): Promise<PlayerSearchResult | null> {
-    // Format username-tag for dak.gg URL (spaces become %20, # becomes -)
-    const formattedName = `${username.replace(/\s+/g, '%20')}-${tag}`;
-    const url = `${this.DAK_API_BASE}/${formattedName}.json`;
-
-    let lastError: Error | null = null;
-
-    // Retry logic with exponential backoff
-    for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
-      try {
-        console.log(`dak.gg API attempt ${attempt}/${this.MAX_RETRIES} for ${username}#${tag}`);
-
-        // Use Electron's request handler to bypass CORS
-        const response = await window.electronAPI.makeRequest({
-          url,
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'ValRadiant-App/1.0.0'
-          }
-        });
-
-        if (response.status !== 200) {
-          if (response.status === 404) {
-            throw new Error('Player not found on dak.gg');
-          } else if (response.status === 429) {
-            throw new Error('Too many requests to dak.gg');
-          } else if (response.status >= 500) {
-            throw new Error(`dak.gg server error (${response.status})`);
-          } else {
-            throw new Error(`dak.gg API failed with status ${response.status}`);
-          }
-        }
-
-        const data = response.data;
-        
-        console.log(`🔍 [DEBUG] === DAK.GG API RESPONSE ===`);
-        console.log(`🔍 [DEBUG] Full response data:`, data);
-        console.log(`🔍 [DEBUG] Account data:`, data?.pageProps?.account);
-        
-        if (!data?.pageProps?.account || 
-            Object.keys(data.pageProps.account).length === 0 ||
-            data?.pageProps?.dehydratedState?.queries?.some(q => 
-              q.state?.data?.error?.status === 404 && q.state?.data?.error?.message === "account"
-            )) {
-          throw new Error('Player not found on dak.gg');
-        }
-
-        const account = data.pageProps.account;
-        
-        console.log(`🔍 [DEBUG] === ACCOUNT DETAILS ===`);
-        console.log(`🔍 [DEBUG] PUUID:`, account.puuid);
-        console.log(`🔍 [DEBUG] Game Name:`, account.gameName);
-        console.log(`🔍 [DEBUG] Tag Line:`, account.tagLine);
-        console.log(`🔍 [DEBUG] Active Shard:`, account.activeShard);
-        console.log(`🔍 [DEBUG] Account Level:`, account.accountLevel);
-        
-        // Additional validation to ensure we have essential data
-        if (!account.puuid || !account.gameName || !account.tagLine) {
-          throw new Error('Invalid response from dak.gg API');
-        }
-
-        
-        // Convert dak.gg response to our PlayerSearchResult format
-        const result: PlayerSearchResult = {
-          puuid: account.puuid,
-          region: account.activeShard || 'unknown',
-          account_level: account.accountLevel || 0,
-          name: account.gameName || username,
-          tag: account.tagLine || tag,
-          card: {
-            small: account.playerCard?.imageUrl || '',
-            large: account.playerCard?.imageUrl || '',
-            wide: account.playerCard?.imageUrl || '',
-            id: account.playerCard?.id || ''
-          },
-          last_update: account.syncedAt ? new Date(account.syncedAt).toLocaleDateString() : 'Unknown',
-          last_update_raw: account.syncedAt ? new Date(account.syncedAt).getTime() : Date.now()
-        };
-
-        console.log(`🔍 [DEBUG] === FINAL SEARCH RESULT ===`);
-        console.log(`🔍 [DEBUG] Result:`, result);
-        
-        return result;
-
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error('Unknown error occurred');
-        
-        // Don't retry for certain errors
-        if (lastError.message.includes('Player not found') || 
-            lastError.message.includes('Too many requests')) {
-          throw lastError;
-        }
-
-        // If this is the last attempt, throw the error
-        if (attempt === this.MAX_RETRIES) {
-          throw lastError;
-        }
-
-        // Wait before retrying (exponential backoff)
-        const delayMs = this.RETRY_DELAY * Math.pow(2, attempt - 1);
-        console.warn(`dak.gg API attempt ${attempt} failed: ${lastError.message}. Retrying in ${delayMs}ms...`);
-        await this.delay(delayMs);
-      }
-    }
-
-    throw lastError || new Error('dak.gg API failed for unknown reasons');
-  }
-
-  private static async searchWithFallbackAPI(username: string, tag: string): Promise<PlayerSearchResult | null> {
+  private static async searchWithC4ldasAPI(username: string, tag: string): Promise<PlayerSearchResult | null> {
     const encodedUsername = encodeURIComponent(username);
     const encodedTag = encodeURIComponent(tag);
     const url = `${this.FALLBACK_API_BASE}/puuid?player=${encodedUsername}&tag=${encodedTag}`;
@@ -202,7 +78,9 @@ export class PlayerSearchAPI {
     // Retry logic with exponential backoff
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
-        console.log(`Fallback API attempt ${attempt}/${this.MAX_RETRIES} for ${username}#${tag}`);
+        console.log(`🔍 [DEBUG] === C4LDAS API ATTEMPT ${attempt}/${this.MAX_RETRIES} ===`);
+        console.log(`🔍 [DEBUG] URL: ${url}`);
+        console.log(`🔍 [DEBUG] Username: ${username}, Tag: ${tag}`);
 
         const response = await this.fetchWithTimeout(url, {
           method: 'GET',
@@ -213,6 +91,10 @@ export class PlayerSearchAPI {
         }, this.REQUEST_TIMEOUT);
 
         if (!response.ok) {
+          console.log(`🔍 [DEBUG] Response not OK. Status: ${response.status}`);
+          const responseText = await response.text();
+          console.log(`🔍 [DEBUG] Response body:`, responseText);
+          
           if (response.status === 404) {
             throw new Error('Player not found. Please check the username and tag.');
           } else if (response.status === 429) {
@@ -226,6 +108,9 @@ export class PlayerSearchAPI {
         }
 
         const data: PlayerSearchResponse = await response.json();
+        console.log(`🔍 [DEBUG] === C4LDAS API RESPONSE ===`);
+        console.log(`🔍 [DEBUG] Full response:`, data);
+        console.log(`🔍 [DEBUG] Player data:`, data.data);
         
         if (data.status !== 200 || !data.data) {
           throw new Error('Player not found. Please check the username and try again.');
@@ -235,7 +120,7 @@ export class PlayerSearchAPI {
         const cacheKey = `${username}#${tag}`.toLowerCase();
         this.cache.set(cacheKey, { data: data.data, timestamp: Date.now() });
         
-        console.log(`Fallback API search successful for ${username}#${tag} on attempt ${attempt}`);
+        console.log(`✅ [DEBUG] C4ldas API search successful for ${username}#${tag} on attempt ${attempt}`);
         return data.data;
 
       } catch (error) {
@@ -245,7 +130,7 @@ export class PlayerSearchAPI {
         if (lastError.message.includes('Player not found') || 
             lastError.message.includes('Too many requests') ||
             lastError.message.includes('Request timed out')) {
-          console.error('Fallback API search failed (non-retryable):', lastError.message);
+          console.error('🔍 [DEBUG] C4ldas API search failed (non-retryable):', lastError.message);
           throw lastError;
         }
 
@@ -257,13 +142,12 @@ export class PlayerSearchAPI {
 
         // Wait before retrying (exponential backoff)
         const delayMs = this.RETRY_DELAY * Math.pow(2, attempt - 1);
-        console.warn(`Fallback API attempt ${attempt} failed: ${lastError.message}. Retrying in ${delayMs}ms...`);
+        console.warn(`🔍 [DEBUG] C4ldas API attempt ${attempt} failed: ${lastError.message}. Retrying in ${delayMs}ms...`);
         await this.delay(delayMs);
       }
     }
 
-    // This should never be reached, but just in case
-    throw lastError || new Error('Both search APIs failed');
+    throw lastError || new Error('C4ldas API search failed');
   }
 
   static async convertToPlayerInfo(
