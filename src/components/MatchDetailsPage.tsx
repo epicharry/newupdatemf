@@ -930,6 +930,15 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
                               💥 {kill.damage.reduce((total, dmg) => total + dmg.damage, 0)} damage
                             </div>
                           )}
+                          
+                          {/* Show damage from damage array if available */}
+                          {kill.damage && Array.isArray(kill.damage) && kill.damage.length > 0 && (
+                            <div className={`text-xs mt-1 ${
+                              isDarkMode ? 'text-orange-400' : 'text-orange-600'
+                            }`}>
+                              💥 {kill.damage.reduce((total: number, dmg: any) => total + (dmg.damage || 0), 0)} damage
+                            </div>
+                          )}
                         </div>
                       </div>
                       
