@@ -318,7 +318,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
             >
               <div className="flex items-center space-x-4">
                 {/* Rank Icon - Left Side */}
-                 src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '') === 'radiant' ? 'radiant.png' : player.rank.rank.toLowerCase().replace(' ', '') + '1.png'}`}
+                <div className="flex-shrink-0">
                   <img 
                     src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}1.png`}
                     alt={player.rank.rank}
