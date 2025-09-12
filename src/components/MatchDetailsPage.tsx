@@ -923,11 +923,11 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
                           )}
                           
                          {/* Show damage amount */}
-                         {kill.finishingDamage.damage && (
+                          {kill.damage && kill.damage.length > 0 && (
                             <div className={`text-xs mt-1 ${
                               isDarkMode ? 'text-orange-400' : 'text-orange-600'
                             }`}>
-                             💥 {kill.finishingDamage.damage} damage
+                              💥 {kill.damage.reduce((total, dmg) => total + dmg.damage, 0)} damage
                             </div>
                           )}
                         </div>
