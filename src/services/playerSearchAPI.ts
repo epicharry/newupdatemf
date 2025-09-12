@@ -63,8 +63,8 @@ export class PlayerSearchAPI {
       return cached.data;
     }
 
-    // Use c4ldas API directly
-    console.log(`Using c4ldas API for ${username}#${tag}`);
+    // Only use c4ldas API (removed dak.gg due to invalid PUUID issues)
+    console.log(`🔍 [DEBUG] Using c4ldas API for ${username}#${tag}`);
     return this.searchWithC4ldasAPI(username, tag);
   }
 
