@@ -119,6 +119,10 @@ export class PlayerSearchAPI {
 
         const data = response.data;
         
+        console.log(`🔍 [DEBUG] === DAK.GG API RESPONSE ===`);
+        console.log(`🔍 [DEBUG] Full response data:`, data);
+        console.log(`🔍 [DEBUG] Account data:`, data?.pageProps?.account);
+        
         if (!data?.pageProps?.account || 
             Object.keys(data.pageProps.account).length === 0 ||
             data?.pageProps?.dehydratedState?.queries?.some(q => 
@@ -128,6 +132,13 @@ export class PlayerSearchAPI {
         }
 
         const account = data.pageProps.account;
+        
+        console.log(`🔍 [DEBUG] === ACCOUNT DETAILS ===`);
+        console.log(`🔍 [DEBUG] PUUID:`, account.puuid);
+        console.log(`🔍 [DEBUG] Game Name:`, account.gameName);
+        console.log(`🔍 [DEBUG] Tag Line:`, account.tagLine);
+        console.log(`🔍 [DEBUG] Active Shard:`, account.activeShard);
+        console.log(`🔍 [DEBUG] Account Level:`, account.accountLevel);
         
         // Additional validation to ensure we have essential data
         if (!account.puuid || !account.gameName || !account.tagLine) {
@@ -152,6 +163,9 @@ export class PlayerSearchAPI {
           last_update_raw: account.syncedAt ? new Date(account.syncedAt).getTime() : Date.now()
         };
 
+        console.log(`🔍 [DEBUG] === FINAL SEARCH RESULT ===`);
+        console.log(`🔍 [DEBUG] Result:`, result);
+        
         return result;
 
       } catch (error) {
@@ -258,6 +272,13 @@ export class PlayerSearchAPI {
     usePlayerRegion: boolean = true
   ): Promise<PlayerInfo> {
     try {
+      console.log(`🔍 [DEBUG] === CONVERT TO PLAYER INFO ===`);
+      console.log(`🔍 [DEBUG] Search result:`, searchResult);
+      console.log(`🔍 [DEBUG] Original PUUID from search:`, searchResult.puuid);
+      console.log(`🔍 [DEBUG] PUUID length:`, searchResult.puuid.length);
+      console.log(`🔍 [DEBUG] Player region:`, searchResult.region);
+      console.log(`🔍 [DEBUG] Use player region:`, usePlayerRegion);
+      
       console.log(`Converting search result for ${searchResult.name}#${searchResult.tag} from region: ${searchResult.region}`);
       
       // Create a new API instance with the player's region if needed
@@ -266,6 +287,8 @@ export class PlayerSearchAPI {
       if (usePlayerRegion && searchResult.region) {
         const playerRegion = searchResult.region.toLowerCase();
         const currentRegion = valorantAPI.getCurrentRegion();
+        
+        console.log(`🔍 [DEBUG] Player region: ${playerRegion}, Current region: ${currentRegion}`);
         
         if (playerRegion !== currentRegion) {
           console.log(`Player is from different region (${playerRegion} vs ${currentRegion}), creating region-specific API`);
