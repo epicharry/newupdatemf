@@ -1,5 +1,5 @@
 import { ValorantTokens, PlayerInfo, RankInfo } from '../types/valorant';
-import { RANKS } from '../constants/valorant';
+import { RANKS, CLIENT_PLATFORM, CLIENT_VERSION } from '../constants/valorant';
 
 export interface PlayerSearchResult {
   puuid: string;
@@ -291,7 +291,8 @@ export class PlayerSearchAPI {
       let rank: RankInfo = { tier: 0, rr: 0, rank: "Unranked" };
       
       try {
-        rank = await apiToUse.getPlayerRank(searchResult.puuid);
+        // Use extended rank search for player search
+        rank = await this.getExtendedPlayerRank(searchResult.puuid, apiToUse);
         console.log(`Fetched rank for ${searchResult.name}#${searchResult.tag}:`, rank);
       } catch (error) {
         console.warn(`Failed to get player rank for ${searchResult.name}#${searchResult.tag}:`, error);
@@ -313,6 +314,112 @@ export class PlayerSearchAPI {
     }
   }
 
+  static async getExtendedPlayerRank(puuid: string, valorantAPI: any): Promise<RankInfo> {
+    const region = valorantAPI.getCurrentRegion();
+    const tokens = valorantAPI.getTokens();
+    
+    if (!tokens) {
+      throw new Error('No tokens available');
+    }
+
+    const headers = {
+      "Authorization": `Bearer ${tokens.authToken}`,
+      "X-Riot-Entitlements-JWT": tokens.entToken,
+      "X-Riot-ClientPlatform": CLIENT_PLATFORM,
+      "X-Riot-ClientVersion": CLIENT_VERSION,
+      "Content-Type": "application/json"
+    };
+
+    try {
+      console.log(`Extended rank search for ${puuid} in region ${region}`);
+      
+      // Try competitive updates with extended range (up to 50 matches)
+      const competitiveResponse = await window.electronAPI.makeRequest({
+        url: `https://pd.${region}.a.pvp.net/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=50`,
+        headers,
+        method: 'GET'
+      });
+
+      if (competitiveResponse.status === 200 && competitiveResponse.data?.Matches) {
+        console.log(`Found ${competitiveResponse.data.Matches.length} competitive matches for ${puuid}`);
+        
+        // Look through all matches to find the most recent rank
+        for (const match of competitiveResponse.data.Matches) {
+          if (match.TierAfterUpdate > 0) {
+            const rank = {
+              tier: match.TierAfterUpdate,
+              rr: match.RankedRatingAfterUpdate,
+              rank: RANKS[match.TierAfterUpdate] || "Unranked"
+            };
+            
+            console.log(`Found rank from competitive updates: ${rank.rank} (${rank.rr} RR)`);
+            return rank;
+          }
+        }
+        
+        console.log('No ranked matches found in competitive updates');
+      }
+
+      // Fallback to current MMR endpoint
+      const mmrResponse = await window.electronAPI.makeRequest({
+        url: `https://pd.${region}.a.pvp.net/mmr/v1/players/${puuid}`,
+        headers,
+        method: 'GET'
+      });
+
+      if (mmrResponse.status === 200 && mmrResponse.data?.QueueSkills?.competitive) {
+        const competitive = mmrResponse.data.QueueSkills.competitive;
+        console.log('MMR data:', competitive);
+        
+        // Try current season tier
+        const currentTier = competitive.CurrentSeasonTier || 0;
+        const currentRR = competitive.CurrentSeasonEndRankedRating || 0;
+
+        if (currentTier > 0) {
+          const rank = {
+            tier: currentTier,
+            rr: currentRR,
+            rank: RANKS[currentTier] || "Unranked"
+          };
+          
+          console.log(`Found rank from current season: ${rank.rank} (${rank.rr} RR)`);
+          return rank;
+        }
+
+        // Try seasonal info as final fallback
+        const seasonalInfo = competitive.SeasonalInfoBySeasonID || {};
+        if (Object.keys(seasonalInfo).length > 0) {
+          const seasons = Object.values(seasonalInfo) as any[];
+          // Sort by season to get the most recent
+          const latestSeason = seasons[seasons.length - 1];
+          
+          if (latestSeason && latestSeason.CompetitiveTier > 0) {
+            const rank = {
+              tier: latestSeason.CompetitiveTier,
+              rr: latestSeason.RankedRating || 0,
+              rank: RANKS[latestSeason.CompetitiveTier] || "Unranked"
+            };
+            
+            console.log(`Found rank from seasonal info: ${rank.rank} (${rank.rr} RR)`);
+            return rank;
+          }
+        }
+      }
+
+      console.log(`No rank data found for ${puuid}`);
+      return { tier: 0, rr: 0, rank: "Unranked" };
+      
+    } catch (error) {
+      console.error(`Extended rank search failed for ${puuid}:`, error);
+      
+      // If it's a rate limit error, throw it up
+      if (error.toString().includes('429')) {
+        throw new Error('Rate limited - please wait before searching again');
+      }
+      
+      return { tier: 0, rr: 0, rank: "Unranked" };
+    }
+  }
   static clearCache(): void {
     this.cache.clear();
   }
