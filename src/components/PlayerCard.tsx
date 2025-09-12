@@ -108,7 +108,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           
           <div className="flex items-center space-x-2 mt-1">
             <img 
-              src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}.png`}
+              src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}1.png`}
               alt={player.rank.rank}
               className="w-5 h-5"
               draggable={false}

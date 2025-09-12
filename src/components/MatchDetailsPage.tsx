@@ -587,7 +587,7 @@ const PlayerDetailsCard: React.FC<PlayerDetailsCardProps> = ({
               {matchDetails.matchInfo.isRanked && (
                 <div className="flex items-center space-x-2 mt-1">
                   <img 
-                    src={`./rank-icons/${(RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '')}.png`}
+                    src={`./rank-icons/${(RANKS[player.competitiveTier] || 'unranked').toLowerCase().replace(' ', '')}1.png`}
                     alt={RANKS[player.competitiveTier] || 'Unranked'}
                     className="w-5 h-5"
                     draggable={false}

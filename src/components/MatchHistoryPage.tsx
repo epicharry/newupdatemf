@@ -320,7 +320,7 @@ export const MatchHistoryPage: React.FC<MatchHistoryPageProps> = ({
                 {/* Rank Icon - Left Side */}
                 <div className="flex-shrink-0">
                   <img 
-                    src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}.png`}
+                    src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '')}1.png`}
                     alt={player.rank.rank}
                     className="w-12 h-12"
                     draggable={false}

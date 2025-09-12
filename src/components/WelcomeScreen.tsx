@@ -128,7 +128,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               }
             `}>
               <img 
-                src={`./rank-icons/${currentUser.rank.rank.toLowerCase().replace(' ', '')}.png`}
+                src={`./rank-icons/${currentUser.rank.rank.toLowerCase().replace(' ', '')}1.png`}
                 alt={currentUser.rank.rank}
                 className="w-8 h-8"
                 draggable={false}
