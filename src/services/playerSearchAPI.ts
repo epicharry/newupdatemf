@@ -223,10 +223,12 @@ export class PlayerSearchAPI {
 
   static async getExtendedPlayerRank(puuid: string, valorantAPI: any): Promise<RankInfo> {
     const region = valorantAPI.getCurrentRegion();
+    const shard = valorantAPI.getCurrentShard();
     const tokens = valorantAPI.getTokens();
     
     console.log(`🔍 [DEBUG] Starting extended rank search for PUUID: ${puuid}`);
     console.log(`🔍 [DEBUG] Using region: ${region}`);
+    console.log(`🔍 [DEBUG] Using shard: ${shard}`);
     console.log(`🔍 [DEBUG] Tokens available:`, !!tokens);
     
     if (!tokens) {
@@ -244,96 +246,64 @@ export class PlayerSearchAPI {
 
     try {
       console.log(`Extended rank search for ${puuid} in region ${region}`);
-      console.log(`🔍 [DEBUG] Making competitive updates request...`);
+      console.log(`🔍 [DEBUG] Making competitive updates request with specific endpoint...`);
       
-      // Try competitive updates with extended range (up to 50 matches)
+      // Use the specific endpoint you mentioned with queue=competitive parameter
       const competitiveResponse = await window.electronAPI.makeRequest({
-        url: `https://pd.${region}.a.pvp.net/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=50`,
+        url: `https://pd.${shard}.a.pvp.net/mmr/v1/players/${puuid}/competitiveupdates?startIndex=0&endIndex=1&queue=competitive`,
         headers,
         method: 'GET'
       });
 
       if (competitiveResponse.status === 200 && competitiveResponse.data?.Matches) {
         console.log(`✅ [DEBUG] Found ${competitiveResponse.data.Matches.length} competitive matches for ${puuid}`);
-        console.log(`🔍 [DEBUG] First few matches:`, competitiveResponse.data.Matches.slice(0, 3));
+        console.log(`🔍 [DEBUG] Raw matches data:`, competitiveResponse.data.Matches);
         
-        // Look through all matches to find the most recent rank
-        for (const match of competitiveResponse.data.Matches) {
-          console.log(`🔍 [DEBUG] Checking match: TierAfterUpdate=${match.TierAfterUpdate}, RR=${match.RankedRatingAfterUpdate}`);
-          if (match.TierAfterUpdate > 0) {
-            const rank = {
-              tier: match.TierAfterUpdate,
-              rr: match.RankedRatingAfterUpdate,
-              rank: RANKS[match.TierAfterUpdate] || "Unranked"
-            };
-            
-            console.log(`✅ [DEBUG] Found rank from competitive updates: ${rank.rank} (${rank.rr} RR)`);
-            return rank;
-          }
+        // Sort matches by MatchStartTime in descending order (most recent first)
+        const sortedMatches = competitiveResponse.data.Matches.sort((a: any, b: any) => 
+          b.MatchStartTime - a.MatchStartTime
+        );
+        
+        console.log(`🔍 [DEBUG] Sorted matches by time:`, sortedMatches);
+        
+        if (sortedMatches.length > 0) {
+          const mostRecentMatch = sortedMatches[0];
+          console.log(`🔍 [DEBUG] Most recent match:`, mostRecentMatch);
+          console.log(`🔍 [DEBUG] TierAfterUpdate: ${mostRecentMatch.TierAfterUpdate}`);
+          console.log(`🔍 [DEBUG] RankedRatingAfterUpdate: ${mostRecentMatch.RankedRatingAfterUpdate}`);
+          
+          // Use tier mapping as specified
+          const tierMapping: Record<number, string> = {
+            0: 'Unranked',
+            3: 'Iron 1', 4: 'Iron 2', 5: 'Iron 3',
+            6: 'Bronze 1', 7: 'Bronze 2', 8: 'Bronze 3',
+            9: 'Silver 1', 10: 'Silver 2', 11: 'Silver 3',
+            12: 'Gold 1', 13: 'Gold 2', 14: 'Gold 3',
+            15: 'Platinum 1', 16: 'Platinum 2', 17: 'Platinum 3',
+            18: 'Diamond 1', 19: 'Diamond 2', 20: 'Diamond 3',
+            21: 'Ascendant 1', 22: 'Ascendant 2', 23: 'Ascendant 3',
+            24: 'Immortal 1', 25: 'Immortal 2', 26: 'Immortal 3',
+            27: 'Radiant'
+          };
+          
+          const tier = mostRecentMatch.TierAfterUpdate || 0;
+          const rr = mostRecentMatch.RankedRatingAfterUpdate || 0;
+          const rankName = tierMapping[tier] || 'Unranked';
+          
+          const rank = {
+            tier,
+            rr,
+            rank: rankName
+          };
+          
+          console.log(`✅ [DEBUG] Found rank from most recent competitive match: ${rank.rank} (${rank.rr} RR)`);
+          return rank;
+        } else {
+          console.log(`⚠️ [DEBUG] No matches found in competitive updates response`);
         }
-        
-        console.log(`⚠️ [DEBUG] No ranked matches found in ${competitiveResponse.data.Matches.length} competitive updates`);
       } else {
         console.log(`❌ [DEBUG] Competitive updates request failed. Status: ${competitiveResponse.status}`);
         console.log(`🔍 [DEBUG] Response data:`, competitiveResponse.data);
-      }
-
-      console.log(`🔍 [DEBUG] Trying MMR endpoint as fallback...`);
-      // Fallback to current MMR endpoint
-      const mmrResponse = await window.electronAPI.makeRequest({
-        url: `https://pd.${region}.a.pvp.net/mmr/v1/players/${puuid}`,
-        headers,
-        method: 'GET'
-      });
-
-      if (mmrResponse.status === 200 && mmrResponse.data?.QueueSkills?.competitive) {
-        const competitive = mmrResponse.data.QueueSkills.competitive;
-        console.log(`✅ [DEBUG] MMR endpoint successful`);
-        console.log(`🔍 [DEBUG] MMR data:`, competitive);
-        
-        // Try current season tier
-        const currentTier = competitive.CurrentSeasonTier || 0;
-        const currentRR = competitive.CurrentSeasonEndRankedRating || 0;
-
-        console.log(`🔍 [DEBUG] Current season data: Tier=${currentTier}, RR=${currentRR}`);
-        
-        if (currentTier > 0) {
-          const rank = {
-            tier: currentTier,
-            rr: currentRR,
-            rank: RANKS[currentTier] || "Unranked"
-          };
-          
-          console.log(`✅ [DEBUG] Found rank from current season: ${rank.rank} (${rank.rr} RR)`);
-          return rank;
-        }
-
-        console.log(`🔍 [DEBUG] Checking seasonal info...`);
-        // Try seasonal info as final fallback
-        const seasonalInfo = competitive.SeasonalInfoBySeasonID || {};
-        console.log(`🔍 [DEBUG] Seasonal info keys:`, Object.keys(seasonalInfo));
-        
-        if (Object.keys(seasonalInfo).length > 0) {
-          const seasons = Object.values(seasonalInfo) as any[];
-          console.log(`🔍 [DEBUG] Found ${seasons.length} seasons of data`);
-          // Sort by season to get the most recent
-          const latestSeason = seasons[seasons.length - 1];
-          console.log(`🔍 [DEBUG] Latest season data:`, latestSeason);
-          
-          if (latestSeason && latestSeason.CompetitiveTier > 0) {
-            const rank = {
-              tier: latestSeason.CompetitiveTier,
-              rr: latestSeason.RankedRating || 0,
-              rank: RANKS[latestSeason.CompetitiveTier] || "Unranked"
-            };
-            
-            console.log(`✅ [DEBUG] Found rank from seasonal info: ${rank.rank} (${rank.rr} RR)`);
-            return rank;
-          }
-        }
-      } else {
-        console.log(`❌ [DEBUG] MMR endpoint failed. Status: ${mmrResponse.status}`);
-        console.log(`🔍 [DEBUG] MMR Response data:`, mmrResponse.data);
       }
 
       console.log(`❌ [DEBUG] No rank data found for ${puuid} after checking all endpoints`);
@@ -341,12 +311,6 @@ export class PlayerSearchAPI {
       
     } catch (error) {
       console.error(`❌ [DEBUG] Extended rank search failed for ${puuid}:`, error);
-      
-      // If it's a rate limit error, throw it up
-      if (error.toString().includes('429')) {
-        console.log(`⚠️ [DEBUG] Rate limited during rank search`);
-        throw new Error('Rate limited - please wait before searching again');
-      }
       
       console.log(`🔍 [DEBUG] Returning unranked due to error`);
       return { tier: 0, rr: 0, rank: "Unranked" };
