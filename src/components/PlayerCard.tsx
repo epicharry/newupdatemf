@@ -61,7 +61,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           {player.agentImageUrl ? (
             <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-white/20 hover:ring-white/40 transition-all duration-300">
               <img 
-                src={player.agentImageUrl} 
+               src={`./rank-icons/${player.rank.rank.toLowerCase().replace(' ', '') === 'radiant' ? 'radiant.png' : player.rank.rank.toLowerCase().replace(' ', '') + '1.png'}`}
                 alt={player.agent}
                 className="w-full h-full object-cover"
                 draggable={false}
