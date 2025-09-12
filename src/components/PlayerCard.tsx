@@ -25,7 +25,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
     if (tier <= 20) return 'text-[#8A59C2]'; // Diamond
     if (tier <= 23) return 'text-[#3BB273]'; // Ascendant
     if (tier <= 26) return 'text-[#C03B3B]'; // Immortal
-    return 'text-[#FADC45]'; // Radiant
+    return isDarkMode ? 'text-[#FADC45]' : 'text-[#D4AF37]'; // Radiant - darker gold for light mode
   };
 
   const getAgentColor = () => {
