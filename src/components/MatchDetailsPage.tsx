@@ -751,6 +751,11 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
     if (weaponId === 'Ultimate' || weaponId.toLowerCase() === 'ultimate') {
       return 'Ultimate';
     }
+   
+   // Handle bomb damage
+   if (weaponId === 'Bomb' || weaponId.toLowerCase() === 'bomb') {
+     return 'Spike';
+   }
     
     // Try exact match first, then try lowercase
     return WEAPONS[weaponId] || WEAPONS[weaponId.toLowerCase()] || 'Unknown Weapon';
@@ -890,6 +895,14 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
                               }`}>
                                 🔪 KNIFE KILL
                               </span>
+                           ) : kill.finishingDamage.damageType === 'Bomb' ? (
+                             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                               isDarkMode 
+                                 ? 'bg-orange-600/20 border border-orange-500/30 text-orange-400' 
+                                 : 'bg-orange-500/15 border border-orange-400/30 text-orange-700'
+                             }`}>
+                               💥 SPIKE
+                             </span>
                             ) : (
                               <span className={`text-xs px-2 py-1 rounded-full ${
                                 isDarkMode 
@@ -909,12 +922,12 @@ const MatchTimeline: React.FC<MatchTimelineProps> = ({
                             </div>
                           )}
                           
-                          {/* Show damage if available */}
-                          {kill.damage && (
+                         {/* Show damage amount */}
+                         {kill.finishingDamage.damage && (
                             <div className={`text-xs mt-1 ${
                               isDarkMode ? 'text-orange-400' : 'text-orange-600'
                             }`}>
-                              💥 {kill.damage} damage
+                             💥 {kill.finishingDamage.damage} damage
                             </div>
                           )}
                         </div>
